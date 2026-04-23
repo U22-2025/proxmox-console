@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>サーバ情報入力</title>
+<style>
+body { font-family: sans-serif; background:#f4f6f8; padding:40px; }
+.container { max-width:600px; margin:auto; background:white; padding:30px; border-radius:10px; }
+.form-group { margin-bottom:20px; }
+label { font-weight:bold; display:block; margin-bottom:8px; }
+input { width:100%; padding:8px; }
+button { width:100%; padding:12px; font-size:16px; }
+.summary { background:#eef2f7; padding:10px; margin-bottom:20px; border-radius:5px; }
+</style>
+</head>
+<body>
+<div class="container">
+<h2>サーバ情報入力</h2>
+
+<div class="summary">
+    <strong>選択されたリソース</strong><br>
+    CPU: <span id="cpuVal"></span> コア<br>
+    メモリ: <span id="memVal"></span> MB<br>
+    HDD: <span id="hddVal"></span> GB
+</div>
+
+<form method="POST" action="/create-vm">
+    <!-- hiddenで引き継ぎ -->
+    <input type="hidden" name="cpu" id="cpu">
+    <input type="hidden" name="memory" id="memory">
+    <input type="hidden" name="hdd" id="hdd">
+
+    <div class="form-group">
+        <label>サーバ名</label>
+        <input type="text" name="servername" required>
+    </div>
+
+    <div class="form-group">
+        <label>ユーザ名</label>
+        <input type="text" name="username" required>
+    </div>
+
+    <div class="form-group">
+        <label>ユーザパスワード</label>
+        <input type="password" name="password" required>
+    </div>
+
+    <button type="submit">仮想マシンを作成</button>
+</form>
+</div>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const cpu = params.get('cpu');
+const memory = params.get('memory');
+const hdd = params.get('hdd');
+
+document.getElementById('cpuVal').textContent = cpu;
+document.getElementById('memVal').textContent = memory;
+document.getElementById('hddVal').textContent = hdd;
+
+document.getElementById('cpu').value = cpu;
+document.getElementById('memory').value = memory;
+document.getElementById('hdd').value = hdd;
+</script>
+</body>
+</html>
