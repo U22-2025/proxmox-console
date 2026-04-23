@@ -5,15 +5,15 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
+	"path/filepath"
+	"strconv"
 	"time"
 )
 
 func main() {
-	// 静的ファイル配信
 	fs := http.FileServer(http.Dir("./static"))
 	http.Handle("/", fs)
-
-	// VM作成リクエスト受付
 	http.HandleFunc("/create-vm", createVMHandler)
 
 	fmt.Println("Server started at http://localhost:8080")
@@ -26,44 +26,87 @@ func createVMHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// フォーム値取得
-	cpu := r.FormValue("cpu")
-	memory := r.FormValue("memory")
-	hdd := r.FormValue("hdd")
+	cpu, _ := strconv.Atoi(r.FormValue("cpu"))
+	memory, _ := strconv.Atoi(r.FormValue("memory"))
+	hdd, _ := strconv.Atoi(r.FormValue("hdd"))
 	servername := r.FormValue("servername")
-	username := r.FormValue("username")
-	password := r.FormValue("password")
 
-	// YAML生成
-	yaml := fmt.Sprintf(`vm:
-  name: %s
-  resources:
-    cpu: %s
-    memory: %s
-    hdd: %s
-  user:
-    name: %s
-    password: %s
-`, servername, cpu, memory, hdd, username, password)
+	// 実行用ディレクトリ作成
+	workdir := filepath.Join("terraform", fmt.Sprintf("run_%d", time.Now().Unix()))
+	os.MkdirAll(workdir, 0755)
 
-	// ファイル名（重複しないようタイムスタンプ）
-	filename := fmt.Sprintf("vm_%s_%d.yaml", servername, time.Now().Unix())
+	tfContent := fmt.Sprintf(`
+resource "proxmox_virtual_environment_vm" "%s" {
+  name      = "%s"
+  node_name = "proxmox-host1"
 
-	err := os.WriteFile(filename, []byte(yaml), 0644)
+  cpu {
+    cores   = %d
+    sockets = 1
+    type    = "host"
+  }
+
+  memory {
+    dedicated = %d
+  }
+
+  disk {
+    datastore_id = "local-lvm"
+    interface    = "scsi0"
+    size         = %d
+  }
+
+  network_device {
+    bridge  = "vmbr32"
+    model   = "virtio"
+    vlan_id = 10
+  }
+
+  operating_system {
+    type = "l26"
+  }
+
+  agent {
+    enabled = true
+  }
+}
+`, servername, servername, cpu, memory, hdd)
+
+	tfFile := filepath.Join(workdir, "vm.tf")
+	os.WriteFile(tfFile, []byte(tfContent), 0644)
+
+	// provider.tf をコピー
+	copyFile("terraform/provider.tf", filepath.Join(workdir, "provider.tf"))
+	copyFile("terraform/versions.tf", filepath.Join(workdir, "versions.tf"))
+
+	// Terraform実行
+	initCmd := exec.Command("terraform", "init")
+	initCmd.Dir = workdir
+	initOut, _ := initCmd.CombinedOutput()
+
+	applyCmd := exec.Command("terraform", "apply", "-auto-approve")
+	applyCmd.Dir = workdir
+	applyOut, _ := applyCmd.CombinedOutput()
+
+	fmt.Fprintf(w, `
+	<html>
+	<head><meta charset="UTF-8"><title>Terraform実行ログ</title></head>
+	<body>
+	<h2>Terraform 実行結果</h2>
+	<h3>terraform init</h3>
+	<pre>%s</pre>
+	<h3>terraform apply</h3>
+	<pre>%s</pre>
+	<a href="/">戻る</a>
+	</body>
+	</html>
+	`, initOut, applyOut)
+}
+
+func copyFile(src, dst string) {
+	input, err := os.ReadFile(src)
 	if err != nil {
-		http.Error(w, "YAMLファイル生成失敗", http.StatusInternalServerError)
 		return
 	}
-
-	// 完了画面
-	fmt.Fprintf(w, `
-		<html>
-		<head><meta charset="UTF-8"><title>完了</title></head>
-		<body>
-			<h2>仮想マシン申請を受け付けました</h2>
-			<p>YAMLファイルを生成しました: %s</p>
-			<a href="/">最初のページへ戻る</a>
-		</body>
-		</html>
-	`, filename)
+	os.WriteFile(dst, input, 0644)
 }
