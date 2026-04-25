@@ -9,15 +9,24 @@ import (
 	"path/filepath"
 	"strconv"
 	"time"
+
+	"github.com/joho/godotenv"
 )
 
+var NODE_NAME string
+var PORT string
+
 func main() {
+	godotenv.Load()
+	NODE_NAME = os.Getenv("HOST_NAME")
+	PORT = os.Getenv("PORT")
+
 	fs := http.FileServer(http.Dir("./static"))
 	http.Handle("/", fs)
 	http.HandleFunc("/create-vm", createVMHandler)
 
-	fmt.Println("Server started at http://localhost:8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	fmt.Println("Server started at http://localhost:" + PORT)
+	log.Fatal(http.ListenAndServe(":" + PORT, nil))
 }
 
 func createVMHandler(w http.ResponseWriter, r *http.Request) {
@@ -38,12 +47,12 @@ func createVMHandler(w http.ResponseWriter, r *http.Request) {
 	tfContent := fmt.Sprintf(`
 resource "proxmox_virtual_environment_vm" "%s" {
   name      = "%s"
-  node_name = "proxmox-host1"
+  node_name = "%s"
 
   cpu {
     cores   = %d
     sockets = 1
-    type    = "host"
+    type    = "kvm64"
   }
 
   memory {
@@ -57,9 +66,9 @@ resource "proxmox_virtual_environment_vm" "%s" {
   }
 
   network_device {
-    bridge  = "vmbr32"
+    bridge  = "vmbr0"
     model   = "virtio"
-    vlan_id = 10
+    vlan_id = 20
   }
 
   operating_system {
@@ -70,7 +79,7 @@ resource "proxmox_virtual_environment_vm" "%s" {
     enabled = true
   }
 }
-`, servername, servername, cpu, memory, hdd)
+`, servername, servername, NODE_NAME, cpu, memory, hdd)
 
 	tfFile := filepath.Join(workdir, "vm.tf")
 	os.WriteFile(tfFile, []byte(tfContent), 0644)
