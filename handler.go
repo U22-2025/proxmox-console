@@ -10,7 +10,6 @@ import (
 	"strconv"
 	"time"
 	"encoding/json"
-	"strings"
 )
 
 func runTerraformJob(jobID string, req VMRequest) {
@@ -79,15 +78,14 @@ func getVMIP(job *Job) string {
 	cmd := exec.Command("terraform", "output", "-json", "vm_ip")
 	cmd.Dir = job.Workdir
 
-	out, err := cmd.Output()
-	if err != nil {
-		job.Log += "\n" + err.Error()
+	if err := runCmdWithLog(cmd, job.LogPath); err != nil {
+		job.Status = "error"
 		return ""
 	}
-
+	
 	var ips []string
 	if err := json.Unmarshal(out, &ips); err != nil {
-		job.Log += "\nJSON ERR: " + err.Error()
+		log.Printf("Failed to parse IP output: %v", err)
 		return ""
 	}
 
