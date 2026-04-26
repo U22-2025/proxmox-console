@@ -75,10 +75,13 @@ func runTerraformJob(jobID string, req VMRequest) {
 }
 
 func getVMIP(job *Job) string {
+	logFile, _ := os.OpenFile(job.LogPath, os.O_APPEND|os.O_WRONLY, 0644)
+	defer logFile.Close()
+
 	cmd := exec.Command("terraform", "output", "-json", "vm_ip")
 	cmd.Dir = job.Workdir
 
-	if err := runCmdWithLog(cmd, job.LogPath); err != nil {
+	if err := runCmdWithLog(cmd, logFile); err != nil {
 		job.Status = "error"
 		return ""
 	}
