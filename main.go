@@ -9,9 +9,6 @@ import (
 	"encoding/base64"
 	"sync"
 	"os/exec"
-	"path/filepath"
-	"strconv"
-	"time"
 
 	"github.com/amoghe/go-crypt"
 	"github.com/joho/godotenv"
