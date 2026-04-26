@@ -78,11 +78,11 @@ func runTerraformJob(jobID string, r *http.Request) {
 		return
 	}
 
-	job.IP = getVMIP(workdir)
+	job.IP = getVMIP(workdir, job)
 	job.Status = "done"
 }
 
-func getVMIP(dir string) string {
+func getVMIP(dir string, job *Job) string {
 	cmd := exec.Command("terraform", "output", "-raw", "vm_ip")
 	cmd.Dir = dir
 	out, err := cmd.Output()
@@ -90,7 +90,7 @@ func getVMIP(dir string) string {
 		job.Status = "error"
 		return ""
 	}
-	
+
 	return strings.TrimSpace(string(out))
 }
 
