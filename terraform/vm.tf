@@ -3,7 +3,7 @@ resource "proxmox_virtual_environment_vm" "vm" {
   node_name = var.node_name
 
   clone {
-    vm_id = 9000
+    vm_id = 9001
   }
 
   cpu {
