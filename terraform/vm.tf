@@ -38,6 +38,17 @@ resource "proxmox_virtual_environment_vm" "vm" {
   }
 }
 
+agent {
+  enabled = true
+}
+
+timeouts {
+  create = "10m"
+}
+
 output "vm_ip" {
-    value = proxmox_virtual_environment_vm.vm.ipv4_addresses[0]
+  value = try(
+    proxmox_virtual_environment_vm.vm.ipv4_addresses[0],
+    "waiting"
+  )
 }
