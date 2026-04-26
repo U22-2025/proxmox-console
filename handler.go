@@ -89,6 +89,7 @@ func getVMIP(dir string, job *Job) string {
 }
 
 func createVMHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("jobs address:", &jobs)
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -103,6 +104,7 @@ func createVMHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func statusHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("jobs address:", &jobs)
 	id := r.URL.Query().Get("id")
 
 	jobAny, ok := jobs.Load(id)

@@ -7,19 +7,11 @@ import (
 	"os"
 	"crypto/rand"
 	"encoding/base64"
-	"sync"
 	"os/exec"
 
 	"github.com/amoghe/go-crypt"
 	"github.com/joho/godotenv"
 )
-
-type Job struct {
-	Status string
-	IP     string
-	LogPath    string
-}
-var jobs = sync.Map{}
 
 var NODE_NAME string
 var PORT string
