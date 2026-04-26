@@ -1,4 +1,4 @@
-resource "proxmox_virtual_environment_vm" vm.servername {
+resource "proxmox_virtual_environment_vm" "vm" {
   name      = var.servername
   node_name = var.node_name
 
