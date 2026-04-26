@@ -29,8 +29,7 @@ resource "proxmox_virtual_environment_vm" "vm" {
   initialization {
     ip_config {
       ipv4 {
-        address = "172.32.0.50/24"
-        gateway = "172.32.0.254"
+        address = "dhcp"
       }
     }
 
