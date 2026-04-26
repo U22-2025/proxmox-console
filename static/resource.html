@@ -1,63 +1,67 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
-<title>VMリソース選択</title>
+
 <style>
-body { font-family: sans-serif; background:#f4f6f8; padding:40px; }
-.container { max-width:600px; margin:auto; background:white; padding:30px; border-radius:10px; }
-.form-group { margin-bottom:25px; }
-label { font-weight:bold; display:block; margin-bottom:10px; }
-input[type=range] { width:70%; }
-input[type=number] { width:25%; padding:5px; }
-.row { display:flex; justify-content:space-between; align-items:center; }
-button { width:100%; padding:12px; font-size:16px; }
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+body{background:#0d0d0d;min-height:100vh;padding:2.5rem 1rem;box-sizing:border-box}
+.wrap{background:#161616;border-radius:12px;padding:1.75rem 2rem;max-width:540px;margin:auto;border:0.5px solid #272727}
+.ttl{font-size:15px;font-weight:500;color:#e2e2e2;margin:0 0 1.75rem;letter-spacing:0.01em}
+.grp{margin-bottom:1.4rem}
+.lbl{font-size:11px;font-weight:500;color:#555;text-transform:uppercase;letter-spacing:0.07em;margin:0 0 10px;display:flex;justify-content:space-between;align-items:center}
+.badge{font-size:13px;font-weight:500;color:#5dcaa5;background:transparent;border:none;text-transform:none;letter-spacing:0}
+.row{display:flex;align-items:center;gap:12px}
+.row input[type=range]{flex:1;accent-color:#1d9e75;cursor:pointer}
+.row input[type=number]{width:70px;text-align:center;font-size:13px;background:#1f1f1f;color:#e2e2e2;border:0.5px solid #303030;border-radius:8px;padding:5px 8px}
+.row input[type=number]:focus{outline:none;border-color:#1d9e75}
+.div{border:none;border-top:0.5px solid #1f1f1f;margin:0 0 1.4rem}
+.btn{width:100%;padding:11px;font-size:14px;font-weight:500;background:#1d9e75;color:#fff;border:none;border-radius:8px;cursor:pointer;letter-spacing:0.02em;transition:background 0.15s}
+.btn:hover{background:#17855f}
+.btn:active{transform:scale(0.99)}
 </style>
-</head>
 <body>
-<div class="container">
-<h2>仮想マシン リソース選択</h2>
+<div class="page">
+  <h2 class="sr-only">仮想マシン リソース選択フォーム</h2>
+  <div class="wrap">
+    <p class="ttl">仮想マシン リソース選択</p>
 
-<form method="GET" action="info.html">
-    <!-- CPU -->
-    <div class="form-group">
-        <label>CPUコア数 (1〜3)</label>
-        <div class="row">
-            <input type="range" id="cpuRange" min="1" max="3" value="1">
-            <input type="number" id="cpuNumber" name="cpu" min="1" max="3" value="1">
-        </div>
+    <div class="grp">
+      <div class="lbl">CPU コア数 <span class="badge" id="cpuLabel">1 コア</span></div>
+      <div class="row">
+        <input type="range" id="cpuRange" min="1" max="3" step="1" value="1">
+        <input type="number" id="cpuNumber" min="1" max="3" value="1">
+      </div>
     </div>
 
-    <!-- メモリ -->
-    <div class="form-group">
-        <label>メモリ (512〜4096MB)</label>
-        <div class="row">
-            <input type="range" id="memRange" min="512" max="4096" step="512" value="1024">
-            <input type="number" id="memNumber" name="memory" min="512" max="4096" step="512" value="1024">
-        </div>
+    <hr class="div">
+
+    <div class="grp">
+      <div class="lbl">メモリ <span class="badge" id="memLabel">1024 MB</span></div>
+      <div class="row">
+        <input type="range" id="memRange" min="512" max="4096" step="512" value="1024">
+        <input type="number" id="memNumber" min="512" max="4096" step="512" value="1024">
+      </div>
     </div>
 
-    <!-- HDD -->
-    <div class="form-group">
-        <label>ディスク容量 (1〜64GB)</label>
-        <div class="row">
-            <input type="range" id="hddRange" min="1" max="64" value="10">
-            <input type="number" id="hddNumber" name="hdd" min="1" max="64" value="10">
-        </div>
+    <hr class="div">
+
+    <div class="grp" style="margin-bottom:1.75rem">
+      <div class="lbl">ディスク容量 <span class="badge" id="hddLabel">10 GB</span></div>
+      <div class="row">
+        <input type="range" id="hddRange" min="1" max="64" step="1" value="10">
+        <input type="number" id="hddNumber" min="1" max="64" value="10">
+      </div>
     </div>
 
-    <button type="submit">次へ進む</button>
-</form>
+    <button class="btn" onclick="alert('CPU=' + cpuNumber.value + 'コア / メモリ=' + memNumber.value + 'MB / HDD=' + hddNumber.value + 'GB')">次へ進む →</button>
+  </div>
 </div>
+</body>
 
 <script>
-function sync(range, number){
-    range.addEventListener('input', ()=> number.value = range.value);
-    number.addEventListener('input', ()=> range.value = number.value);
+function sync(range, number, label, fmt){
+  const upd = v => { label.textContent = fmt(v); };
+  range.addEventListener('input', () => { number.value = range.value; upd(range.value); });
+  number.addEventListener('input', () => { range.value = number.value; upd(number.value); });
 }
-sync(cpuRange, cpuNumber);
-sync(memRange, memNumber);
-sync(hddRange, hddNumber);
+sync(cpuRange, cpuNumber, cpuLabel, v => v + ' コア');
+sync(memRange, memNumber, memLabel, v => v + ' MB');
+sync(hddRange, hddNumber, hddLabel, v => v + ' GB');
 </script>
-</body>
-</html>

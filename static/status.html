@@ -1,19 +1,155 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>VM作成ステータス</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: sans-serif;
+  background: #0d0d0d;
+  min-height: 100vh;
+  padding: 2.5rem 1rem;
+}
+.container {
+  max-width: 540px;
+  margin: auto;
+  background: #161616;
+  padding: 1.75rem 2rem;
+  border-radius: 12px;
+  border: 0.5px solid #272727;
+}
+h2 {
+  font-size: 15px;
+  font-weight: 500;
+  color: #e2e2e2;
+  margin-bottom: 1.5rem;
+  letter-spacing: 0.01em;
+}
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 1.5rem;
+}
+.info-card {
+  background: #1f1f1f;
+  border: 0.5px solid #2a2a2a;
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+.info-card .card-label {
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #555;
+  margin-bottom: 6px;
+}
+.info-card .card-value {
+  font-size: 15px;
+  font-weight: 500;
+  color: #e2e2e2;
+  min-height: 22px;
+}
+#status-val { color: #eab308; }
+#status-val.done { color: #5dcaa5; }
+#status-val.error { color: #f87171; }
+#ip-val { color: #7db8f0; font-family: monospace; font-size: 14px; }
+
+.log-label {
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #555;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.log-label .live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #1d9e75;
+  animation: pulse 1.5s infinite;
+  display: inline-block;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+.log-box {
+  background: #0d0d0d;
+  border: 0.5px solid #272727;
+  border-radius: 8px;
+  padding: 12px 14px;
+  height: 320px;
+  overflow-y: auto;
+  font-family: monospace;
+  font-size: 12px;
+  line-height: 1.7;
+  color: #aaa;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.log-box::-webkit-scrollbar { width: 6px; }
+.log-box::-webkit-scrollbar-track { background: transparent; }
+.log-box::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 3px; }
+.log-box::-webkit-scrollbar-thumb:hover { background: #3a3a3a; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h2>仮想マシン作成</h2>
+
+  <div class="info-grid">
+    <div class="info-card">
+      <div class="card-label">ステータス</div>
+      <div class="card-value" id="status-val">—</div>
+    </div>
+    <div class="info-card">
+      <div class="card-label">IP アドレス</div>
+      <div class="card-value" id="ip-val">—</div>
+    </div>
+  </div>
+
+  <div class="log-label">
+    ログ <span class="live-dot" id="dot"></span>
+  </div>
+  <div class="log-box" id="log"></div>
+</div>
+
 <script>
 const id = new URLSearchParams(location.search).get("id");
 
 setInterval(async () => {
-  const res = await fetch("/status?id=" + id);
-  const data = await res.json();
+  try {
+    const res = await fetch("/status?id=" + id);
+    const data = await res.json();
 
-  document.getElementById("status").innerText = data.Status;
-  document.getElementById("log").textContent = data.log;
+    const statusEl = document.getElementById("status-val");
+    statusEl.textContent = data.Status ?? "—";
+    statusEl.className = "";
+    if (data.Status === "done") statusEl.classList.add("done");
+    else if (data.Status === "error") statusEl.classList.add("error");
 
-  if (data.Status === "done") {
-    document.getElementById("ip").innerText = data.IP;
+    const logEl = document.getElementById("log");
+    const isBottom = logEl.scrollHeight - logEl.scrollTop <= logEl.clientHeight + 8;
+    logEl.textContent = data.log ?? "";
+    if (isBottom) logEl.scrollTop = logEl.scrollHeight;
+
+    if (data.Status === "done") {
+      document.getElementById("ip-val").textContent = data.IP ?? "—";
+      document.getElementById("dot").style.background = "#5dcaa5";
+      document.getElementById("dot").style.animation = "none";
+    }
+  } catch (e) {
+    document.getElementById("status-val").textContent = "エラー";
+    document.getElementById("status-val").className = "error";
   }
 }, 2000);
 </script>
-
-<h2>Status: <span id="status"></span></h2>
-<h2>IP: <span id="ip"></span></h2>
-<pre id="log"></pre>
+</body>
+</html>

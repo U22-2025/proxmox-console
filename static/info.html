@@ -4,49 +4,130 @@
 <meta charset="UTF-8">
 <title>サーバ情報入力</title>
 <style>
-body { font-family: sans-serif; background:#f4f6f8; padding:40px; }
-.container { max-width:600px; margin:auto; background:white; padding:30px; border-radius:10px; }
-.form-group { margin-bottom:20px; }
-label { font-weight:bold; display:block; margin-bottom:8px; }
-input { width:100%; padding:8px; }
-button { width:100%; padding:12px; font-size:16px; }
-.summary { background:#eef2f7; padding:10px; margin-bottom:20px; border-radius:5px; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: sans-serif;
+  background: #0d0d0d;
+  min-height: 100vh;
+  padding: 2.5rem 1rem;
+}
+.container {
+  max-width: 540px;
+  margin: auto;
+  background: #161616;
+  padding: 1.75rem 2rem;
+  border-radius: 12px;
+  border: 0.5px solid #272727;
+}
+h2 {
+  font-size: 15px;
+  font-weight: 500;
+  color: #e2e2e2;
+  margin-bottom: 1.5rem;
+  letter-spacing: 0.01em;
+}
+.summary {
+  background: #1f1f1f;
+  border: 0.5px solid #2a2a2a;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 1.5rem;
+  font-size: 13px;
+  line-height: 1.9;
+  color: #888;
+}
+.summary strong {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #555;
+  margin-bottom: 6px;
+}
+.summary span {
+  color: #5dcaa5;
+  font-weight: 500;
+}
+.form-group {
+  margin-bottom: 1.25rem;
+}
+label {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #555;
+  margin-bottom: 8px;
+}
+input[type=text],
+input[type=password] {
+  width: 100%;
+  padding: 9px 12px;
+  font-size: 14px;
+  background: #1f1f1f;
+  color: #e2e2e2;
+  border: 0.5px solid #303030;
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+input[type=text]:focus,
+input[type=password]:focus {
+  border-color: #1d9e75;
+}
+button {
+  width: 100%;
+  padding: 11px;
+  margin-top: 0.5rem;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  background: #1d9e75;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+button:hover { background: #17855f; }
+button:active { transform: scale(0.99); }
 </style>
 </head>
 <body>
 <div class="container">
-<h2>サーバ情報入力</h2>
+  <h2>サーバ情報入力</h2>
 
-<div class="summary">
-    <strong>選択されたリソース</strong><br>
-    CPU: <span id="cpuVal"></span> コア<br>
-    メモリ: <span id="memVal"></span> MB<br>
+  <div class="summary">
+    <strong>選択されたリソース</strong>
+    CPU: <span id="cpuVal"></span> コア &nbsp;／&nbsp;
+    メモリ: <span id="memVal"></span> MB &nbsp;／&nbsp;
     HDD: <span id="hddVal"></span> GB
-</div>
+  </div>
 
-<form method="POST" action="/create-vm">
-    <!-- hiddenで引き継ぎ -->
+  <form method="POST" action="/create-vm">
     <input type="hidden" name="cpu" id="cpu">
     <input type="hidden" name="memory" id="memory">
     <input type="hidden" name="hdd" id="hdd">
 
     <div class="form-group">
-        <label>サーバ名</label>
-        <input type="text" name="servername" required>
+      <label>サーバ名</label>
+      <input type="text" name="servername" placeholder="例: web-server-01" required>
     </div>
 
     <div class="form-group">
-        <label>ユーザ名</label>
-        <input type="text" name="username" required>
+      <label>ユーザ名</label>
+      <input type="text" name="username" placeholder="例: admin" required>
     </div>
 
-    <div class="form-group">
-        <label>ユーザパスワード</label>
-        <input type="password" name="password" required>
+    <div class="form-group" style="margin-bottom:1.75rem">
+      <label>ユーザパスワード</label>
+      <input type="password" name="password" placeholder="••••••••" required>
     </div>
 
-    <button type="submit">仮想マシンを作成</button>
-</form>
+    <button type="submit">仮想マシンを作成 →</button>
+  </form>
 </div>
 
 <script>
@@ -55,13 +136,13 @@ const cpu = params.get('cpu');
 const memory = params.get('memory');
 const hdd = params.get('hdd');
 
-document.getElementById('cpuVal').textContent = cpu;
-document.getElementById('memVal').textContent = memory;
-document.getElementById('hddVal').textContent = hdd;
+document.getElementById('cpuVal').textContent = cpu ?? '—';
+document.getElementById('memVal').textContent = memory ?? '—';
+document.getElementById('hddVal').textContent = hdd ?? '—';
 
-document.getElementById('cpu').value = cpu;
-document.getElementById('memory').value = memory;
-document.getElementById('hdd').value = hdd;
+if (cpu) document.getElementById('cpu').value = cpu;
+if (memory) document.getElementById('memory').value = memory;
+if (hdd) document.getElementById('hdd').value = hdd;
 </script>
 </body>
 </html>
