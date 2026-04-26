@@ -86,7 +86,6 @@ resource "proxmox_virtual_environment_vm" "%s" {
 
 	// provider.tf をコピー
 	copyFile("terraform/provider.tf", filepath.Join(workdir, "provider.tf"))
-	copyFile("terraform/versions.tf", filepath.Join(workdir, "versions.tf"))
 
 	// Terraform実行
 	initCmd := exec.Command("terraform", "init")
