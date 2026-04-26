@@ -30,8 +30,8 @@ func main() {
 
 	fs := http.FileServer(http.Dir("./static"))
 	http.Handle("/", fs)
-	http.HandleFunc("/create-vm", terraform_handler.createVMHandler)
-	http.HandleFunc("/status", terraform_handler.statusHandler)
+	http.HandleFunc("/create-vm", createVMHandler)
+	http.HandleFunc("/status", statusHandler)
 
 	fmt.Println("Server started at http://172.32.0.70:" + PORT)
 	log.Fatal(http.ListenAndServe(":" + PORT, nil))
