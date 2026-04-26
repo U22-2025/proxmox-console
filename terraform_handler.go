@@ -56,11 +56,20 @@ func runTerraformJob(jobID string, r *http.Request) {
 	// Terraform実行
 	initCmd := exec.Command("terraform", "init")
 	initCmd.Dir = workdir
-	initOut, _ := initCmd.CombinedOutput()
+	initOut, err := initCmd.CombinedOutput()
+	job.Log += string(initOut)
+	if err != nil {
+		job.Status = "error"
+		return
+	}
 
 	applyCmd := exec.Command("terraform", "apply", "-auto-approve", "-var-file=runtime.tfvars")
 	applyCmd.Dir = workdir
-	applyOut, _ := applyCmd.CombinedOutput()
+	applyOut, err := applyCmd.CombinedOutput()
+	if err != nil {
+		job.Status = "error"
+		return
+	}
 
 	job.Log = string(initOut) + "\n\n" + string(applyOut)
 
@@ -76,7 +85,12 @@ func runTerraformJob(jobID string, r *http.Request) {
 func getVMIP(dir string) string {
 	cmd := exec.Command("terraform", "output", "-raw", "vm_ip")
 	cmd.Dir = dir
-	out, _ := cmd.Output()
+	out, err := cmd.Output()
+	if err != nil {
+		job.Status = "error"
+		return ""
+	}
+	
 	return strings.TrimSpace(string(out))
 }
 
