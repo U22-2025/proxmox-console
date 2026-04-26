@@ -25,7 +25,7 @@ body{background:#0d0d0d;min-height:100vh;padding:2.5rem 1rem;box-sizing:border-b
     <div class="grp">
       <div class="lbl">CPU コア数 <span class="badge" id="cpuLabel">1 コア</span></div>
       <div class="row">
-        <input type="range" id="cpuRange" min="1" max="3" step="1" value="1">
+        <input type="range" id="cpuRange" min="1" max="3" step="1" value="1" name="cpu">
         <input type="number" id="cpuNumber" min="1" max="3" value="1">
       </div>
     </div>
@@ -35,7 +35,7 @@ body{background:#0d0d0d;min-height:100vh;padding:2.5rem 1rem;box-sizing:border-b
     <div class="grp">
       <div class="lbl">メモリ <span class="badge" id="memLabel">1024 MB</span></div>
       <div class="row">
-        <input type="range" id="memRange" min="512" max="4096" step="512" value="1024">
+        <input type="range" id="memRange" min="512" max="4096" step="512" value="1024" name="memory">
         <input type="number" id="memNumber" min="512" max="4096" step="512" value="1024">
       </div>
     </div>
@@ -45,7 +45,7 @@ body{background:#0d0d0d;min-height:100vh;padding:2.5rem 1rem;box-sizing:border-b
     <div class="grp" style="margin-bottom:1.75rem">
       <div class="lbl">ディスク容量 <span class="badge" id="hddLabel">10 GB</span></div>
       <div class="row">
-        <input type="range" id="hddRange" min="1" max="64" step="1" value="10">
+        <input type="range" id="hddRange" min="1" max="64" step="1" value="10" name="hdd">
         <input type="number" id="hddNumber" min="1" max="64" value="10">
       </div>
     </div>
