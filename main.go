@@ -5,9 +5,11 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"bytes"
 	"crypto/rand"
 	"encoding/base64"
 	"os/exec"
+	"io"
 
 	"github.com/amoghe/go-crypt"
 	"github.com/joho/godotenv"
@@ -38,10 +40,15 @@ func copyFile(src, dst string) {
 	os.WriteFile(dst, input, 0644)
 }
 
-func runCmdWithLog(cmd *exec.Cmd, logFile *os.File) error {
-    cmd.Stdout = logFile
-    cmd.Stderr = logFile
-    return cmd.Run()
+func runCmdWithLog(cmd *exec.Cmd, logFile *os.File) ([]byte, error) {
+	var buf bytes.Buffer
+
+	cmd.Stdout = io.MultiWriter(logFile, &buf)
+	cmd.Stderr = io.MultiWriter(logFile, &buf)
+
+	err := cmd.Run()
+
+	return buf.Bytes(), err
 }
 
 func hashPasswordForLinux(password string) (string, error) {
