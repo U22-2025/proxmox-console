@@ -13,7 +13,7 @@ import (
 	"strings"
 )
 
-func runTerraformJob(jobID string, r *http.Request) {
+func runTerraformJob(jobID string, req VMRequest) {
 	// 実行用ディレクトリ作成
 	workdir := filepath.Join("terraform", fmt.Sprintf("run_%d", time.Now().Unix()))
 	os.MkdirAll(workdir, 0755)
@@ -26,14 +26,7 @@ func runTerraformJob(jobID string, r *http.Request) {
     defer logFile.Close()
 	job.Status = "running(init)"
 
-	cpu, _ := strconv.Atoi(r.FormValue("cpu"))
-	memory, _ := strconv.Atoi(r.FormValue("memory"))
-	hdd, _ := strconv.Atoi(r.FormValue("hdd"))
-	servername := r.FormValue("servername")
-	username := r.FormValue("username")
-	password := r.FormValue("password")
-
-	hash, err := hashPasswordForLinux(password)
+	hash, err := hashPasswordForLinux(req.Password)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -46,7 +39,7 @@ func runTerraformJob(jobID string, r *http.Request) {
 	username      = "%s"
 	password_hash = "%s"
 	`,
-		servername, cpu, memory, hdd, username, hash,
+		req.Servername, req.CPU, req.Memory, req.HDD, req.Username, hash,
 	)
 
 	os.WriteFile(filepath.Join(workdir, "runtime.tfvars"), []byte(tfvars), 0600)
@@ -96,11 +89,18 @@ func createVMHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	jobID := fmt.Sprintf("%d", time.Now().UnixNano())
-
 	jobs.Store(jobID, &Job{Status: "running"})
 
-	go runTerraformJob(jobID, r)
+	req := VMRequest{
+		CPU:        atoiSafe(r.FormValue("cpu")),
+		Memory:     atoiSafe(r.FormValue("memory")),
+		HDD:        atoiSafe(r.FormValue("hdd")),
+		Servername: r.FormValue("servername"),
+		Username:   r.FormValue("username"),
+		Password:   r.FormValue("password"),
+	}
 
+	go runTerraformJob(jobID, req)
 	http.Redirect(w, r, "/status.html?id="+jobID, http.StatusSeeOther)
 }
 
@@ -124,4 +124,9 @@ func statusHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
+}
+
+func atoiSafe(s string) int {
+	i, _ := strconv.Atoi(s)
+	return i
 }
