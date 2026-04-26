@@ -5,14 +5,8 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
-	"path/filepath"
-	"strconv"
-	"time"
 	"crypto/rand"
 	"encoding/base64"
-	"encoding/json"
-	"strings"
 	"sync"
 
 	"github.com/amoghe/go-crypt"
@@ -36,8 +30,8 @@ func main() {
 
 	fs := http.FileServer(http.Dir("./static"))
 	http.Handle("/", fs)
-	http.HandleFunc("/create-vm", createVMHandler)
-	http.HandleFunc("/status", statusHandler)
+	http.HandleFunc("/create-vm", terraform_handler.createVMHandler)
+	http.HandleFunc("/status", terraform_handler.statusHandler)
 
 	fmt.Println("Server started at http://172.32.0.70:" + PORT)
 	log.Fatal(http.ListenAndServe(":" + PORT, nil))
