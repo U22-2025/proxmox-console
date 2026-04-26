@@ -9,7 +9,10 @@ import (
 	"path/filepath"
 	"strconv"
 	"time"
+	"crypto/rand"
+	"encoding/base64"
 
+	"github.com/amoghe/go-crypt"
 	"github.com/joho/godotenv"
 )
 
@@ -41,6 +44,11 @@ func createVMHandler(w http.ResponseWriter, r *http.Request) {
 	servername := r.FormValue("servername")
 	username := r.FormValue("username")
 	password := r.FormValue("password")
+
+	hash, err := hashPasswordForLinux(password)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// 実行用ディレクトリ作成
 	workdir := filepath.Join("terraform", fmt.Sprintf("run_%d", time.Now().Unix()))
@@ -93,4 +101,23 @@ func copyFile(src, dst string) {
 		return
 	}
 	os.WriteFile(dst, input, 0644)
+}
+
+func hashPasswordForLinux(password string) (string, error) {
+	// ランダムsalt生成（16byte）
+	saltBytes := make([]byte, 16)
+	_, err := rand.Read(saltBytes)
+	if err != nil {
+		return "", err
+	}
+
+	salt := base64.RawStdEncoding.EncodeToString(saltBytes)
+
+	// $6$ = SHA-512 crypt
+	hash, err := crypt.Crypt(password, "$6$"+salt)
+	if err != nil {
+		return "", err
+	}
+
+	return hash, nil
 }
