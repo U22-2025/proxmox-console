@@ -127,27 +127,32 @@ const id = new URLSearchParams(location.search).get("id");
 setInterval(async () => {
   try {
     const res = await fetch("/status?id=" + id);
-    const data = await res.json();
+
+    // ← ここ追加
+    const text = await res.text();
+    console.log("RAW RESPONSE:", text);
+
+    const data = JSON.parse(text);
+    console.log("PARSED:", data);
 
     const statusEl = document.getElementById("status-val");
-    statusEl.textContent = data.Status ?? "—";
+    statusEl.textContent = data.status ?? "—";
     statusEl.className = "";
-    if (data.Status === "done") statusEl.classList.add("done");
-    else if (data.Status === "error") statusEl.classList.add("error");
+    if (data.status === "done") statusEl.classList.add("done");
+    else if (data.status === "error") statusEl.classList.add("error");
 
     const logEl = document.getElementById("log");
     const isBottom = logEl.scrollHeight - logEl.scrollTop <= logEl.clientHeight + 8;
     logEl.textContent = data.log ?? "";
     if (isBottom) logEl.scrollTop = logEl.scrollHeight;
 
-    if (data.Status === "done") {
-      document.getElementById("ip-val").textContent = data.IP ?? "—";
+    if (data.status === "done") {
+      document.getElementById("ip-val").textContent = data.ip ?? "—";
       document.getElementById("dot").style.background = "#5dcaa5";
       document.getElementById("dot").style.animation = "none";
     }
   } catch (e) {
-    document.getElementById("status-val").textContent = "エラー";
-    document.getElementById("status-val").className = "error";
+    console.error(e);
   }
 }, 2000);
 </script>
