@@ -14,6 +14,16 @@ import (
 )
 
 func runTerraformJob(jobID string, r *http.Request) {
+	// 実行用ディレクトリ作成
+	workdir := filepath.Join("terraform", fmt.Sprintf("run_%d", time.Now().Unix()))
+	os.MkdirAll(workdir, 0755)
+
+	job.LogPath = filepath.Join(workdir, "terraform.log")
+    logFile, _ := os.Create(job.LogPath)
+	job.LogPath = logPath
+	job.Status = "running(init)"
+    defer logFile.Close()
+
 	jobAny, _ := jobs.Load(jobID)
 	job := jobAny.(*Job)
 
@@ -28,14 +38,6 @@ func runTerraformJob(jobID string, r *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	// 実行用ディレクトリ作成
-	workdir := filepath.Join("terraform", fmt.Sprintf("run_%d", time.Now().Unix()))
-	os.MkdirAll(workdir, 0755)
-
-	logPath := filepath.Join(workdir, "terraform.log")
-    logFile, _ := os.Create(logPath)
-    defer logFile.Close()
 
 	tfvars := fmt.Sprintf(`
 	servername    = "%s"
@@ -65,6 +67,7 @@ func runTerraformJob(jobID string, r *http.Request) {
         return
     }
 
+	job.Status = "running(apply)"
 	applyCmd := exec.Command("terraform", "apply", "-auto-approve", "-var-file=runtime.tfvars")
 	applyCmd.Dir = workdir
 	if err := runCmdWithLog(applyCmd, logFile); err != nil {
@@ -89,7 +92,6 @@ func getVMIP(dir string, job *Job) string {
 }
 
 func createVMHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("jobs address:", &jobs)
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -104,7 +106,6 @@ func createVMHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func statusHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("jobs address:", &jobs)
 	id := r.URL.Query().Get("id")
 
 	jobAny, ok := jobs.Load(id)
@@ -116,15 +117,12 @@ func statusHandler(w http.ResponseWriter, r *http.Request) {
 	job := jobAny.(*Job)
 	logBytes, _ := os.ReadFile(job.LogPath)
 
-    resp := struct {
-        Status string `json:"status"`
-        IP     string `json:"ip"`
-        Log    string `json:"log"`
-    }{
-        Status: job.Status,
-        IP:     job.IP,
-        Log:    string(logBytes),
-    }
+    resp := map[string]string{
+		"status": job.Status,
+		"ip":     job.IP,
+		"log":    string(logBytes),
+	}
 
-    json.NewEncoder(w).Encode(resp)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
 }
