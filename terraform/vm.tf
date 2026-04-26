@@ -36,19 +36,19 @@ resource "proxmox_virtual_environment_vm" "vm" {
 
     user_data_file_id = proxmox_virtual_environment_file.cloudcfg.id
   }
-}
 
-agent {
-  enabled = true
-}
+  agent {
+    enabled = true
+  }
 
-timeouts {
-  create = "10m"
+  timeouts {
+    create = "10m"
+  }
 }
 
 output "vm_ip" {
   value = try(
-    proxmox_virtual_environment_vm.vm.ipv4_addresses[0],
+    proxmox_virtual_environment_vm.vm.ipv4_addresses[0].address,
     "waiting"
   )
 }
