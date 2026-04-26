@@ -21,10 +21,13 @@ func runTerraformJob(jobID string, req VMRequest) {
 	jobAny, _ := jobs.Load(jobID)
 	job := jobAny.(*Job)
 
+	job.Workdir = workdir
 	job.LogPath = filepath.Join(workdir, "terraform.log")
+	jobs.Store(jobID, job)
+	job.Status = "running(init)"
+
     logFile, _ := os.Create(job.LogPath)
     defer logFile.Close()
-	job.Status = "running(init)"
 
 	hash, err := hashPasswordForLinux(req.Password)
 	if err != nil {
@@ -67,20 +70,31 @@ func runTerraformJob(jobID string, req VMRequest) {
         return
     }
 
-	job.IP = getVMIP(workdir, job)
+	job.IP = getVMIP(job)
 	job.Status = "done"
+	jobs.Store(jobID, job)
 }
 
-func getVMIP(dir string, job *Job) string {
-	cmd := exec.Command("terraform", "output", "-raw", "vm_ip")
-	cmd.Dir = dir
+func getVMIP(job *Job) string {
+	cmd := exec.Command("terraform", "output", "-json", "vm_ip")
+	cmd.Dir = job.Workdir
+
 	out, err := cmd.Output()
 	if err != nil {
-		job.Status = "error"
+		job.Log += "\n" + err.Error()
 		return ""
 	}
 
-	return strings.TrimSpace(string(out))
+	var ips []string
+	if err := json.Unmarshal(out, &ips); err != nil {
+		job.Log += "\nJSON ERR: " + err.Error()
+		return ""
+	}
+
+	if len(ips) > 0 {
+		return ips[0]
+	}
+	return ""
 }
 
 func createVMHandler(w http.ResponseWriter, r *http.Request) {
