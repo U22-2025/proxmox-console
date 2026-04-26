@@ -18,14 +18,14 @@ func runTerraformJob(jobID string, r *http.Request) {
 	workdir := filepath.Join("terraform", fmt.Sprintf("run_%d", time.Now().Unix()))
 	os.MkdirAll(workdir, 0755)
 
+	jobAny, _ := jobs.Load(jobID)
+	job := jobAny.(*Job)
+	
 	job.LogPath = filepath.Join(workdir, "terraform.log")
     logFile, _ := os.Create(job.LogPath)
 	job.LogPath = logPath
 	job.Status = "running(init)"
     defer logFile.Close()
-
-	jobAny, _ := jobs.Load(jobID)
-	job := jobAny.(*Job)
 
 	cpu, _ := strconv.Atoi(r.FormValue("cpu"))
 	memory, _ := strconv.Atoi(r.FormValue("memory"))
