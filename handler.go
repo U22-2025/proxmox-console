@@ -56,7 +56,7 @@ func runTerraformJob(jobID string, req VMRequest) {
 	// Terraform実行
 	initCmd := exec.Command("terraform", "init")
 	initCmd.Dir = workdir
-	if err := runCmdWithLog(initCmd, logFile); err != nil {
+	if _, err := runCmdWithLog(initCmd, logFile); err != nil {
         job.Status = "error"
         return
     }
@@ -64,7 +64,7 @@ func runTerraformJob(jobID string, req VMRequest) {
 	job.Status = "running(apply)"
 	applyCmd := exec.Command("terraform", "apply", "-auto-approve", "-var-file=runtime.tfvars")
 	applyCmd.Dir = workdir
-	if err := runCmdWithLog(applyCmd, logFile); err != nil {
+	if _, err := runCmdWithLog(applyCmd, logFile); err != nil {
         job.Status = "error"
         return
     }
