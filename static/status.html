@@ -1,0 +1,17 @@
+<script>
+const id = new URLSearchParams(location.search).get("id");
+
+setInterval(async () => {
+  const res = await fetch("/status?id=" + id);
+  const data = await res.json();
+
+  document.getElementById("status").innerText = data.Status;
+
+  if (data.Status === "done") {
+    document.getElementById("ip").innerText = data.IP;
+  }
+}, 2000);
+</script>
+
+<h2>Status: <span id="status"></span></h2>
+<h2>IP: <span id="ip"></span></h2>

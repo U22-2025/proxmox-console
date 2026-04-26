@@ -16,6 +16,13 @@ import (
 	"github.com/joho/godotenv"
 )
 
+type Job struct {
+	Status string
+	IP     string
+	Log    string
+}
+var jobs = sync.Map{}
+
 var NODE_NAME string
 var PORT string
 
@@ -27,16 +34,15 @@ func main() {
 	fs := http.FileServer(http.Dir("./static"))
 	http.Handle("/", fs)
 	http.HandleFunc("/create-vm", createVMHandler)
+	http.HandleFunc("/status", statusHandler)
 
-	fmt.Println("Server started at http://localhost:" + PORT)
+	fmt.Println("Server started at http://172.32.0.70:" + PORT)
 	log.Fatal(http.ListenAndServe(":" + PORT, nil))
 }
 
-func createVMHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
+func runTerraformJob(jobID string, r *http.Request) {
+	jobAny, _ := jobs.Load(jobID)
+	job := jobAny.(*Job)
 
 	cpu, _ := strconv.Atoi(r.FormValue("cpu"))
 	memory, _ := strconv.Atoi(r.FormValue("memory"))
@@ -83,19 +89,53 @@ func createVMHandler(w http.ResponseWriter, r *http.Request) {
 	applyCmd.Dir = workdir
 	applyOut, _ := applyCmd.CombinedOutput()
 
-	fmt.Fprintf(w, `
-	<html>
-	<head><meta charset="UTF-8"><title>Terraform実行ログ</title></head>
-	<body>
-	<h2>Terraform 実行結果</h2>
-	<h3>terraform init</h3>
-	<pre>%s</pre>
-	<h3>terraform apply</h3>
-	<pre>%s</pre>
-	<a href="/">戻る</a>
-	</body>
-	</html>
-	`, initOut, applyOut)
+	// terraform apply 実行
+	out, err := exec.Command("terraform", "apply", "-auto-approve").CombinedOutput()
+	job.Log = string(out)
+
+	if err != nil {
+		job.Status = "error"
+		return
+	}
+
+	// IP取得（超重要）
+	ip := getVMIP(workdir)
+	job.IP = ip
+	job.Status = "done"
+}
+
+func getVMIP(dir string) string {
+	cmd := exec.Command("terraform", "output", "-raw", "vm_ip")
+	cmd.Dir = dir
+	out, _ := cmd.Output()
+	return strings.TrimSpace(string(out))
+}
+
+func createVMHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	jobID := fmt.Sprintf("%d", time.Now().UnixNano())
+
+	jobs.Store(jobID, &Job{Status: "running"})
+
+	go runTerraformJob(jobID, r)
+
+	http.Redirect(w, r, "/status.html?id="+jobID, http.StatusSeeOther)
+}
+
+func statusHandler(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("id")
+
+	jobAny, ok := jobs.Load(id)
+	if !ok {
+		w.WriteHeader(404)
+		return
+	}
+
+	job := jobAny.(*Job)
+	json.NewEncoder(w).Encode(job)
 }
 
 func copyFile(src, dst string) {
