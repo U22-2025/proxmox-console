@@ -36,8 +36,8 @@ resource "proxmox_virtual_environment_vm" "vm" {
 
     user_data_file_id = proxmox_virtual_environment_file.cloudcfg.id
   }
-  
-  output "vm_ip" {
+}
+
+output "vm_ip" {
     value = proxmox_virtual_environment_vm.vm.ipv4_addresses[0]
-  }
 }
