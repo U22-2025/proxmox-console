@@ -33,6 +33,10 @@ func runTerraformJob(jobID string, r *http.Request) {
 	workdir := filepath.Join("terraform", fmt.Sprintf("run_%d", time.Now().Unix()))
 	os.MkdirAll(workdir, 0755)
 
+	logPath := filepath.Join(workdir, "terraform.log")
+    logFile, _ := os.Create(logPath)
+    defer logFile.Close()
+
 	tfvars := fmt.Sprintf(`
 	servername    = "%s"
 	cpu           = %d
@@ -56,27 +60,17 @@ func runTerraformJob(jobID string, r *http.Request) {
 	// Terraform実行
 	initCmd := exec.Command("terraform", "init")
 	initCmd.Dir = workdir
-	initOut, err := initCmd.CombinedOutput()
-	job.Log += string(initOut)
-	if err != nil {
-		job.Status = "error"
-		return
-	}
+	if err := runCmdWithLog(initCmd, logFile); err != nil {
+        job.Status = "error"
+        return
+    }
 
 	applyCmd := exec.Command("terraform", "apply", "-auto-approve", "-var-file=runtime.tfvars")
 	applyCmd.Dir = workdir
-	applyOut, err := applyCmd.CombinedOutput()
-	if err != nil {
-		job.Status = "error"
-		return
-	}
-
-	job.Log = string(initOut) + "\n\n" + string(applyOut)
-
-	if err != nil {
-		job.Status = "error"
-		return
-	}
+	if err := runCmdWithLog(applyCmd, logFile); err != nil {
+        job.Status = "error"
+        return
+    }
 
 	job.IP = getVMIP(workdir, job)
 	job.Status = "done"
@@ -118,5 +112,17 @@ func statusHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	job := jobAny.(*Job)
-	json.NewEncoder(w).Encode(job)
+	logBytes, _ := os.ReadFile(job.LogPath)
+
+    resp := struct {
+        Status string `json:"status"`
+        IP     string `json:"ip"`
+        Log    string `json:"log"`
+    }{
+        Status: job.Status,
+        IP:     job.IP,
+        Log:    string(logBytes),
+    }
+
+    json.NewEncoder(w).Encode(resp)
 }

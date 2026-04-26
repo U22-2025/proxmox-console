@@ -16,7 +16,7 @@ import (
 type Job struct {
 	Status string
 	IP     string
-	Log    string
+	LogPath    string
 }
 var jobs = sync.Map{}
 
@@ -43,6 +43,12 @@ func copyFile(src, dst string) {
 		return
 	}
 	os.WriteFile(dst, input, 0644)
+}
+
+func runCmdWithLog(cmd *exec.Cmd, logFile *os.File) error {
+    cmd.Stdout = logFile
+    cmd.Stderr = logFile
+    return cmd.Run()
 }
 
 func hashPasswordForLinux(password string) (string, error) {

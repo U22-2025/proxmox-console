@@ -6,6 +6,7 @@ setInterval(async () => {
   const data = await res.json();
 
   document.getElementById("status").innerText = data.Status;
+  document.getElementById("log").textContent = data.log;
 
   if (data.Status === "done") {
     document.getElementById("ip").innerText = data.IP;
@@ -15,3 +16,4 @@ setInterval(async () => {
 
 <h2>Status: <span id="status"></span></h2>
 <h2>IP: <span id="ip"></span></h2>
+<pre id="log"></pre>
