@@ -17,7 +17,7 @@ body{background:#0d0d0d;min-height:100vh;padding:2.5rem 1rem;box-sizing:border-b
 .btn:active{transform:scale(0.99)}
 </style>
 <body>
-<div class="page">
+<form class="page" method="get" action="/info.html">
   <h2 class="sr-only">仮想マシン リソース選択フォーム</h2>
   <div class="wrap">
     <p class="ttl">仮想マシン リソース選択</p>
@@ -50,9 +50,9 @@ body{background:#0d0d0d;min-height:100vh;padding:2.5rem 1rem;box-sizing:border-b
       </div>
     </div>
 
-    <button class="btn" onclick="alert('CPU=' + cpuNumber.value + 'コア / メモリ=' + memNumber.value + 'MB / HDD=' + hddNumber.value + 'GB')">次へ進む →</button>
+    <button class="btn" type="submit">次へ進む →</button>
   </div>
-</div>
+</form>
 </body>
 
 <script>
