@@ -20,12 +20,11 @@ func runTerraformJob(jobID string, r *http.Request) {
 
 	jobAny, _ := jobs.Load(jobID)
 	job := jobAny.(*Job)
-	
+
 	job.LogPath = filepath.Join(workdir, "terraform.log")
     logFile, _ := os.Create(job.LogPath)
-	job.LogPath = logPath
-	job.Status = "running(init)"
     defer logFile.Close()
+	job.Status = "running(init)"
 
 	cpu, _ := strconv.Atoi(r.FormValue("cpu"))
 	memory, _ := strconv.Atoi(r.FormValue("memory"))
