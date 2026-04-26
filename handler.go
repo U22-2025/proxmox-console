@@ -81,7 +81,8 @@ func getVMIP(job *Job) string {
 	cmd := exec.Command("terraform", "output", "-json", "vm_ip")
 	cmd.Dir = job.Workdir
 
-	if err := runCmdWithLog(cmd, logFile); err != nil {
+	out, err := runCmdWithLog(cmd, logFile) // ← ここが重要
+	if err != nil {
 		job.Status = "error"
 		return ""
 	}
