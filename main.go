@@ -66,10 +66,13 @@ func createVMHandler(w http.ResponseWriter, r *http.Request) {
 	)
 
 	os.WriteFile(filepath.Join(workdir, "runtime.tfvars"), []byte(tfvars), 0600)
-	// provider.tf をコピー
+	// ファイルをコピー
 	copyFile("terraform/provider.tf", filepath.Join(workdir, "provider.tf"))
 	copyFile("terraform/variables.tf", filepath.Join(workdir, "variables.tf"))
-	copyFile("terraform/terraform.tfvars", filepath.Join(workdir, "proxmox.auto.tfvars"))
+	copyFile("terraform/proxmox.auto.tfvars", filepath.Join(workdir, "proxmox.auto.tfvars"))
+	copyFile("terraform/snippets.tf", filepath.Join(workdir, "snippets.tf"))
+	copyFile("terraform/vm.tf", filepath.Join(workdir, "vm.tf"))
+	copyFile("terraform/cloud-config.yaml", filepath.Join(workdir, "cloud-config.yaml"))
 
 	// Terraform実行
 	initCmd := exec.Command("terraform", "init")
