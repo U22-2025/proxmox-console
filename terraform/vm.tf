@@ -40,10 +40,6 @@ resource "proxmox_virtual_environment_vm" "vm" {
   agent {
     enabled = true
   }
-
-  timeouts {
-    create = "10m"
-  }
 }
 
 output "vm_ip" {
