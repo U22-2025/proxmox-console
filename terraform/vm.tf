@@ -44,7 +44,7 @@ resource "proxmox_virtual_environment_vm" "vm" {
 
 output "vm_ip" {
   value = try(
-    proxmox_virtual_environment_vm.vm.ipv4_addresses[0],
+    proxmox_virtual_environment_vm.vm.ipv4_addresses[1],
     "waiting"
   )
 }
