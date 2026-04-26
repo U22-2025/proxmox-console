@@ -14,3 +14,12 @@ variable "proxmox_password" {
   description = "Proxmox password"
   sensitive   = true
 }
+
+variable "node_name" {}
+
+variable "servername" {}
+variable "cpu" {}
+variable "memory" {}
+variable "hdd" {}
+variable "username" { sensitive = true }
+variable "password_hash" { sensitive = true }

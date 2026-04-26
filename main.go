@@ -39,62 +39,36 @@ func createVMHandler(w http.ResponseWriter, r *http.Request) {
 	memory, _ := strconv.Atoi(r.FormValue("memory"))
 	hdd, _ := strconv.Atoi(r.FormValue("hdd"))
 	servername := r.FormValue("servername")
+	username := r.FormValue("username")
+	password := r.FormValue("password")
 
 	// 実行用ディレクトリ作成
 	workdir := filepath.Join("terraform", fmt.Sprintf("run_%d", time.Now().Unix()))
 	os.MkdirAll(workdir, 0755)
 
-	tfContent := fmt.Sprintf(`
-resource "proxmox_virtual_environment_vm" "%s" {
-  name      = "%s"
-  node_name = "%s"
+	tfvars := fmt.Sprintf(`
+	servername    = "%s"
+	cpu           = %d
+	memory        = %d
+	hdd           = %d
+	username      = "%s"
+	password_hash = "%s"
+	`,
+		servername, cpu, memory, hdd, username, hash,
+	)
 
-  cpu {
-    cores   = %d
-    sockets = 1
-    type    = "kvm64"
-  }
-
-  memory {
-    dedicated = %d
-  }
-
-  disk {
-    datastore_id = "local-lvm"
-    interface    = "scsi0"
-    size         = %d
-  }
-
-  network_device {
-    bridge  = "vmbr0"
-    model   = "virtio"
-    vlan_id = 20
-  }
-
-  operating_system {
-    type = "l26"
-  }
-
-  agent {
-    enabled = true
-  }
-}
-`, servername, servername, NODE_NAME, cpu, memory, hdd)
-
-	tfFile := filepath.Join(workdir, "vm.tf")
-	os.WriteFile(tfFile, []byte(tfContent), 0644)
-
+	os.WriteFile(filepath.Join(workdir, "runtime.tfvars"), []byte(tfvars), 0600)
 	// provider.tf をコピー
 	copyFile("terraform/provider.tf", filepath.Join(workdir, "provider.tf"))
 	copyFile("terraform/variables.tf", filepath.Join(workdir, "variables.tf"))
-	copyFile("terraform/terraform.tfvars", filepath.Join(workdir, "terraform.tfvars"))
+	copyFile("terraform/terraform.tfvars", filepath.Join(workdir, "proxmox.auto.tfvars"))
 
 	// Terraform実行
 	initCmd := exec.Command("terraform", "init")
 	initCmd.Dir = workdir
 	initOut, _ := initCmd.CombinedOutput()
 
-	applyCmd := exec.Command("terraform", "apply", "-auto-approve")
+	applyCmd := exec.Command("terraform", "apply", "-auto-approve", "-var-file=runtime.tfvars")
 	applyCmd.Dir = workdir
 	applyOut, _ := applyCmd.CombinedOutput()
 
