@@ -9,13 +9,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"time"
-	"crypto/rand"
-	"encoding/base64"
 	"encoding/json"
 	"strings"
-	"sync"
-
-	"github.com/amoghe/go-crypt"
 )
 
 func runTerraformJob(jobID string, r *http.Request) {
