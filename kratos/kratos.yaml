@@ -1,0 +1,25 @@
+dsn: memory
+
+serve:
+  public:
+    base_url: http://localhost:4433
+  admin:
+    base_url: http://localhost:4434
+
+selfservice:
+  default_browser_return_url: http://localhost:3000
+
+  methods:
+    password:
+      enabled: true
+
+  flows:
+    login:
+      ui_url: http://localhost:3000/login
+    registration:
+      ui_url: http://localhost:3000/register
+
+identity:
+  schemas:
+    - id: default
+      file: /etc/config/identity.schema.json
