@@ -10,8 +10,6 @@ import (
 	"encoding/base64"
 	"os/exec"
 	"io"
-
-	"github.com/amoghe/go-crypt"
 	"github.com/joho/godotenv"
 )
 
