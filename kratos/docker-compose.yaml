@@ -15,8 +15,7 @@ services:
     image: oryd/kratos-selfservice-ui-node
     ports:
       - "3000:3000"
-    environment:
-      KRATOS_PUBLIC_URL: http://kratos:4433
-      KRATOS_BROWSER_URL: http://localhost:4433
+    env_file:
+      - .env
     depends_on:
       - kratos
