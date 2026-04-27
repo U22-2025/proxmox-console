@@ -12,8 +12,6 @@ selfservice:
   methods:
     password:
       enabled: true
-      config:
-        identifier: email
 
   flows:
     login:

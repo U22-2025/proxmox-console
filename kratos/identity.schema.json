@@ -9,7 +9,14 @@
         "email": {
           "type": "string",
           "format": "email",
-          "pattern": "^[^@]+@example\\.com$"
+          "pattern": "^[^@]+@example\\.com$",
+          "ory.sh/kratos": {
+            "credentials": {
+              "password": {
+                "identifier": true
+              }
+            }
+          }
         }
       },
       "required": ["email"]
