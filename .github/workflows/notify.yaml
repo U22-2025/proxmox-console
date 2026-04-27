@@ -6,7 +6,7 @@ on:
  
 jobs:
   notify:
-    uses: cinnamobot/discord-issue-notify/.github/workflows/notify.yml@main
+    uses: Cinnamobot/discord-issue-notify/.github/workflows/notify.yaml@main
     secrets:
       DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
  
