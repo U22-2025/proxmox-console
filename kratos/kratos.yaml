@@ -4,7 +4,7 @@ serve:
   public:
     base_url: http://localhost:4433
   admin:
-    base_url: http://localhost:4434
+    base_url: http://kratos:4434
 
 selfservice:
   default_browser_return_url: http://localhost:3000
@@ -22,4 +22,4 @@ selfservice:
 identity:
   schemas:
     - id: default
-      file: /etc/config/identity.schema.json
+      url: file:///etc/config/identity.schema.json
