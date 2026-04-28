@@ -18,7 +18,7 @@ type Config struct {
 var AppConfig Config
 
 func loadConfig() {
-	b, err := os.ReadFile("conf.yaml")
+	b, err := os.ReadFile("config.yaml")
 	if err != nil {
 		panic(err)
 	}
