@@ -20,6 +20,7 @@ var PORT string
 func main() {
 	godotenv.Load()
 	PORT = os.Getenv("PORT")
+	loadConfig()
 
 	fs := http.FileServer(http.Dir("./static"))
 	http.HandleFunc("/", requireLogin(func(w http.ResponseWriter, r *http.Request) {
@@ -36,7 +37,7 @@ func main() {
 	http.HandleFunc("/create-vm", requireLogin(createVMHandler))
 	http.HandleFunc("/status", requireLogin(statusHandler))
 
-	fmt.Println("Server started at http://172.32.0.70:" + PORT)
+	fmt.Println("Server started")
 	log.Fatal(http.ListenAndServe(":" + PORT, nil))
 }
 
