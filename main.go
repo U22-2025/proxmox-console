@@ -15,18 +15,26 @@ import (
 	"github.com/joho/godotenv"
 )
 
-var NODE_NAME string
 var PORT string
 
 func main() {
 	godotenv.Load()
-	NODE_NAME = os.Getenv("HOST_NAME")
 	PORT = os.Getenv("PORT")
 
 	fs := http.FileServer(http.Dir("./static"))
-	http.Handle("/", fs)
-	http.HandleFunc("/create-vm", createVMHandler)
-	http.HandleFunc("/status", statusHandler)
+	http.HandleFunc("/", requireLogin(func(w http.ResponseWriter, r *http.Request) {
+
+		// ルートは resource.html を表示
+		if r.URL.Path == "/" {
+			http.ServeFile(w, r, "./static/resource.html")
+			return
+		}
+
+		// それ以外は静的ファイルとして配信（一覧は出ない）
+		fs.ServeHTTP(w, r)
+	}))
+	http.HandleFunc("/create-vm", requireLogin(createVMHandler))
+	http.HandleFunc("/status", requireLogin(restatusHandler))
 
 	fmt.Println("Server started at http://172.32.0.70:" + PORT)
 	log.Fatal(http.ListenAndServe(":" + PORT, nil))
