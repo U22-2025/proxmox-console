@@ -1,3 +1,5 @@
 *.env
 *proxmox.auto.tfvars
 *url.yaml
+*settings.local.json
+.claude/
