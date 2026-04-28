@@ -1,67 +1,231 @@
-
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VM作成 — リソース選択</title>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <style>
-.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
-body{background:#0d0d0d;min-height:100vh;padding:2.5rem 1rem;box-sizing:border-box}
-.wrap{background:#161616;border-radius:12px;padding:1.75rem 2rem;max-width:540px;margin:auto;border:0.5px solid #272727}
-.ttl{font-size:15px;font-weight:500;color:#e2e2e2;margin:0 0 1.75rem;letter-spacing:0.01em}
-.grp{margin-bottom:1.4rem}
-.lbl{font-size:11px;font-weight:500;color:#555;text-transform:uppercase;letter-spacing:0.07em;margin:0 0 10px;display:flex;justify-content:space-between;align-items:center}
-.badge{font-size:13px;font-weight:500;color:#5dcaa5;background:transparent;border:none;text-transform:none;letter-spacing:0}
-.row{display:flex;align-items:center;gap:12px}
-.row input[type=range]{flex:1;accent-color:#1d9e75;cursor:pointer}
-.row input[type=number]{width:70px;text-align:center;font-size:13px;background:#1f1f1f;color:#e2e2e2;border:0.5px solid #303030;border-radius:8px;padding:5px 8px}
-.row input[type=number]:focus{outline:none;border-color:#1d9e75}
-.div{border:none;border-top:0.5px solid #1f1f1f;margin:0 0 1.4rem}
-.btn{width:100%;padding:11px;font-size:14px;font-weight:500;background:#1d9e75;color:#fff;border:none;border-radius:8px;cursor:pointer;letter-spacing:0.02em;transition:background 0.15s}
-.btn:hover{background:#17855f}
-.btn:active{transform:scale(0.99)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;color:#fff;font-family:'Inter',system-ui,sans-serif}
+input[type=range]{-webkit-appearance:none;background:transparent;cursor:pointer;width:100%}
+input[type=range]::-webkit-slider-runnable-track{height:3px;background:#1e1e1e;border-radius:2px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#fff;margin-top:-5.5px}
+input[type=range]::-moz-range-track{height:3px;background:#1e1e1e;border-radius:2px;border:none}
+input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:#fff;border:none}
 </style>
+</head>
 <body>
-<form class="page" method="get" action="/info.html">
-  <h2 class="sr-only">仮想マシン リソース選択フォーム</h2>
-  <div class="wrap">
-    <p class="ttl">仮想マシン リソース選択</p>
-
-    <div class="grp">
-      <div class="lbl">CPU コア数 <span class="badge" id="cpuLabel">1 コア</span></div>
-      <div class="row">
-        <input type="range" id="cpuRange" min="1" max="3" step="1" value="1" name="cpu">
-        <input type="number" id="cpuNumber" min="1" max="3" value="1">
-      </div>
-    </div>
-
-    <hr class="div">
-
-    <div class="grp">
-      <div class="lbl">メモリ <span class="badge" id="memLabel">1024 MB</span></div>
-      <div class="row">
-        <input type="range" id="memRange" min="512" max="4096" step="512" value="1024" name="memory">
-        <input type="number" id="memNumber" min="512" max="4096" step="512" value="1024">
-      </div>
-    </div>
-
-    <hr class="div">
-
-    <div class="grp" style="margin-bottom:1.75rem">
-      <div class="lbl">ディスク容量 <span class="badge" id="hddLabel">10 GB</span></div>
-      <div class="row">
-        <input type="range" id="hddRange" min="1" max="64" step="1" value="10" name="hdd">
-        <input type="number" id="hddNumber" min="1" max="64" value="10">
-      </div>
-    </div>
-
-    <button class="btn" type="submit">次へ進む →</button>
-  </div>
-</form>
-</body>
-
+<div id="root"></div>
 <script>
-function sync(range, number, label, fmt){
-  const upd = v => { label.textContent = fmt(v); };
-  range.addEventListener('input', () => { number.value = range.value; upd(range.value); });
-  number.addEventListener('input', () => { range.value = number.value; upd(number.value); });
+
+var iconPaths = {
+  server: "M5 4H4a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h1m6 0h2a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2M5 14H4a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h1m6 0h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-2",
+  monitor: "M9 5H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-4M8 21h8m-4-4v4",
+  hardDrive: "M22 12H2M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11zM6 16h.01M10 16h.01",
+  database: "M12 2C6.5 2 2 4.5 2 7v10c0 2.5 4.5 5 10 5s10-2.5 10-5V7c0-2.5-4.5-5-10-5z M2 7c0 2.5 4.5 5 10 5s10-2.5 10-5 M2 17c0 2.5 4.5 5 10 5s10-2.5 10-5",
+  chevronDown: "m6 9 6 6 6-6",
+  chevronRight: "m9 18 6-6-6-6",
+  search: "m21 21-4.3-4.3M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14z",
+  bell: "M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0",
+  refresh: "M1 4v6h6M23 20v-6h-6M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15",
+  settings: "M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
+  shield: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z",
+  network: "M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z",
+  package: "M16.5 9.4 7.55 4.24M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16zM3.27 6.96 12 12.01l8.73-5.05M12 22.08V12",
+  folder: "M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2z",
+  plus: "M12 5v14M5 12h14",
+  logOut: "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9",
+  arrowRight: "M5 12h14M12 5l7 7-7 7",
+  cpu: "M4 5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z M9 9h6v6H9z M9 1v2M15 1v2M9 21v2M15 21v2M1 9h2M1 15h2M21 9h2M21 15h2",
+  memoryStick: "M6 19v-1a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1m0 0v-1a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1m0 0v-1a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1M3 10h18M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z",
+  layers: "m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83zM2 12l8.58 3.91a2 2 0 0 0 1.66 0L22 12M2 17l8.58 3.91a2 2 0 0 0 1.66 0L22 17",
+};
+
+function Icon(props) {
+  return h("svg", {
+    width: props.size || 16, height: props.size || 16, viewBox: "0 0 24 24",
+    fill: "none", stroke: props.color || "#fff", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round",
+    style: Object.assign({ flexShrink: 0 }, props.style || {}),
+  }, h("path", { d: iconPaths[props.name] }));
 }
-sync(cpuRange, cpuNumber, cpuLabel, v => v + ' コア');
-sync(memRange, memNumber, memLabel, v => v + ' MB');
-sync(hddRange, hddNumber, hddLabel, v => v + ' GB');
+
+var h = React.createElement;
+var useState = React.useState;
+
+function TreeItem(iconName, label, depth, children, defaultOpen, isActive, onClick) {
+  var _c = useState(!!defaultOpen); var open = _c[0]; var setOpen = _c[1];
+  var _d = useState(false); var hover = _d[0]; var setHover = _d[1];
+  var has = !!(children && children.length);
+  return h("div", null,
+    h("div", {
+      onClick: function() { if (has) setOpen(!open); if (onClick) onClick(); },
+      onMouseEnter: function() { setHover(true); },
+      onMouseLeave: function() { setHover(false); },
+      style: {
+        display: "flex", alignItems: "center", gap: 7,
+        padding: "6px 16px 6px " + (16 + (depth || 0) * 16) + "px",
+        cursor: "pointer", fontSize: 13,
+        color: isActive ? "#fff" : hover ? "#aaa" : "#555",
+        background: isActive ? "#111" : "transparent",
+        borderLeft: "2px solid " + (isActive ? "#fff" : "transparent"),
+        userSelect: "none",
+      }
+    },
+      has
+        ? h(Icon, { name: open ? "chevronDown" : "chevronRight", size: 11, color: "#333" })
+        : h("span", { style: { width: 11, flexShrink: 0 } }),
+      h(Icon, { name: iconName, size: 13 }),
+      h("span", { style: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, label)
+    ),
+    open && children
+  );
+}
+
+function App() {
+  var _cpu = useState(1); var cpu = _cpu[0]; var setCpu = _cpu[1];
+  var _mem = useState(1024); var mem = _mem[0]; var setMem = _mem[1];
+  var _hdd = useState(10); var hdd = _hdd[0]; var setHdd = _hdd[1];
+
+  var inputStyle = {
+    width: 70, textAlign: "center", fontSize: 13,
+    background: "#0a0a0a", color: "#ccc",
+    border: "1px solid #111", borderRadius: 4, padding: "5px 8px", outline: "none",
+  };
+
+  function Slider(label, icon, value, set, min, max, step, unit) {
+    return h("div", { style: { marginBottom: 28 } },
+      h("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 } },
+        h("div", { style: { display: "flex", alignItems: "center", gap: 8 } },
+          h(Icon, { name: icon, size: 14, color: "#444" }),
+          h("span", { style: { fontSize: 11, color: "#444", textTransform: "uppercase", letterSpacing: "0.08em" } }, label)
+        ),
+        h("span", { style: { fontSize: 13, color: "#888", fontWeight: 500 } }, value + " " + unit)
+      ),
+      h("div", { style: { display: "flex", alignItems: "center", gap: 12 } },
+        h("input", {
+          type: "range", min: min, max: max, step: step || 1, value: value,
+          onChange: function(e) { set(Number(e.target.value)); },
+          style: { flex: 1 }
+        }),
+        h("input", {
+          type: "number", min: min, max: max, step: step || 1, value: value,
+          onChange: function(e) {
+            var v = Number(e.target.value);
+            if (v >= min && v <= max) set(v);
+          },
+          style: inputStyle
+        })
+      )
+    );
+  }
+
+  return h("div", { style: { display: "flex", flexDirection: "column", height: "100vh", minHeight: 600, background: "#000", color: "#fff", fontFamily: "'Inter', system-ui, sans-serif" } },
+
+    /* Header */
+    h("div", { style: { display: "flex", alignItems: "center", gap: 16, padding: "0 24px", height: 52, borderBottom: "1px solid #111", flexShrink: 0 } },
+      h("a", { href: "/", style: { display: "flex", alignItems: "center", gap: 10, minWidth: 160, textDecoration: "none" } },
+        h(Icon, { name: "server", size: 16, color: "#fff" }),
+        h("span", { style: { fontSize: 14, fontWeight: 600, color: "#fff", letterSpacing: "-0.01em" } }, "Proxmox Console"),
+        h("span", { style: { fontSize: 11, color: "#333", marginLeft: 2 } }, "v1.0")
+      ),
+      h("div", { style: { flex: 1, maxWidth: 320, position: "relative" } },
+        h(Icon, { name: "search", size: 12, color: "#333", style: { position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" } }),
+        h("input", { type: "text", placeholder: "Search…", "aria-label": "Search", style: { width: "100%", background: "#000", border: "1px solid #111", borderRadius: 4, padding: "6px 10px 6px 28px", color: "#fff", fontSize: 12, outline: "none", boxSizing: "border-box" } })
+      ),
+      h("div", { style: { marginLeft: "auto", display: "flex", alignItems: "center", gap: 20 } },
+        h("button", { "aria-label": "Notifications", style: { background: "none", border: "none", cursor: "pointer", padding: 0 } }, h(Icon, { name: "bell", size: 15, color: "#333" })),
+        h("button", { "aria-label": "Logout", style: { background: "none", border: "none", cursor: "pointer", padding: 0 } }, h(Icon, { name: "logOut", size: 15, color: "#333" }))
+      )
+    ),
+
+    /* Body */
+    h("div", { style: { display: "flex", flex: 1, overflow: "hidden" } },
+
+      /* Sidebar */
+      h("div", { style: { width: 210, minWidth: 210, borderRight: "1px solid #111", overflowY: "auto", flexShrink: 0, paddingTop: 8 } },
+        h("div", { style: { padding: "8px 18px 4px", fontSize: 10, color: "#2a2a2a", textTransform: "uppercase", letterSpacing: "0.1em" } }, "Resources"),
+        TreeItem("shield", "Datacenter", 0, [
+          TreeItem("server", "pve-node1", 1, [
+            TreeItem("hardDrive", "Storage", 2, [
+              TreeItem("database", "local (LVM)", 3),
+            ], true),
+            TreeItem("network", "Network", 2),
+          ], true),
+        ], true),
+        h("div", { style: { padding: "16px 18px 4px", fontSize: 10, color: "#2a2a2a", textTransform: "uppercase", letterSpacing: "0.1em" } }, "Actions"),
+        TreeItem("plus", "新規作成", 0, null, false, true, function() {}),
+        h("div", { style: { padding: "16px 18px 4px", fontSize: 10, color: "#2a2a2a", textTransform: "uppercase", letterSpacing: "0.1em" } }, "Manage"),
+        TreeItem("folder", "Backups"),
+        TreeItem("shield", "Firewall"),
+        TreeItem("settings", "Configuration")
+      ),
+
+      /* Main */
+      h("div", { style: { flex: 1, overflowY: "auto", padding: "32px 36px", display: "flex", flexDirection: "column", gap: 24 } },
+
+        /* Breadcrumb */
+        h("div", { style: { display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#333" } },
+          h("a", { href: "/", style: { color: "#444", textDecoration: "none" } }, "Dashboard"),
+          h("span", null, "/"),
+          h("span", { style: { color: "#fff" } }, "リソース選択")
+        ),
+
+        /* Title */
+        h("div", { style: { display: "flex", alignItems: "center", gap: 12, marginBottom: 4 } },
+          h("span", { style: { fontSize: 22, fontWeight: 300, color: "#fff", letterSpacing: "-0.02em" } }, "仮想マシン リソース選択")
+        ),
+
+        /* Divider */
+        h("div", { style: { borderTop: "1px solid #111" } }),
+
+        /* Form card */
+        h("form", {
+          method: "get", action: "/info.html",
+          style: { maxWidth: 480, display: "flex", flexDirection: "column", gap: 0 }
+        },
+          h("input", { type: "hidden", name: "cpu", value: cpu }),
+          h("input", { type: "hidden", name: "memory", value: mem }),
+          h("input", { type: "hidden", name: "hdd", value: hdd }),
+
+          Slider("CPU コア数", "cpu", cpu, setCpu, 1, 3, 1, "コア"),
+          h("div", { style: { borderTop: "1px solid #111", margin: "0 0 28px" } }),
+          Slider("メモリ", "memoryStick", mem, setMem, 512, 4096, 512, "MB"),
+          h("div", { style: { borderTop: "1px solid #111", margin: "0 0 28px" } }),
+          Slider("ディスク容量", "hardDrive", hdd, setHdd, 1, 64, 1, "GB"),
+
+          h("div", { style: { borderTop: "1px solid #111", margin: "0 0 24px" } }),
+
+          /* Summary */
+          h("div", { style: { padding: "14px 18px", border: "1px solid #111", marginBottom: 24, display: "flex", gap: 24, flexWrap: "wrap" } },
+            [["CPU", cpu + " コア"], ["メモリ", mem + " MB"], ["ディスク", hdd + " GB"]].map(function(s) {
+              return h("div", { key: s[0] },
+                h("div", { style: { fontSize: 11, color: "#333", marginBottom: 3, textTransform: "uppercase", letterSpacing: "0.07em" } }, s[0]),
+                h("div", { style: { fontSize: 13, color: "#888" } }, s[1])
+              );
+            })
+          ),
+
+          h("button", {
+            type: "submit",
+            style: {
+              background: "#fff", color: "#000", border: "none", borderRadius: 4,
+              padding: "10px 24px", fontSize: 13, fontWeight: 500, cursor: "pointer",
+              display: "flex", alignItems: "center", gap: 8, letterSpacing: "0.01em",
+            }
+          },
+            "次へ進む",
+            h(Icon, { name: "arrowRight", size: 14, color: "#000" })
+          )
+        )
+      )
+    )
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(h(App));
+
 </script>
+</body>
+</html>

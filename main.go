@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/json"
 	"os/exec"
 	"io"
 
@@ -25,9 +26,9 @@ func main() {
 	fs := http.FileServer(http.Dir("./static"))
 	http.HandleFunc("/", requireLogin(func(w http.ResponseWriter, r *http.Request) {
 
-		// ルートは resource.html を表示
+		// ルートは dashboard.html を表示
 		if r.URL.Path == "/" {
-			http.ServeFile(w, r, "./static/resource.html")
+			http.ServeFile(w, r, "./static/dashboard.html")
 			return
 		}
 
@@ -36,9 +37,34 @@ func main() {
 	}))
 	http.HandleFunc("/create-vm", requireLogin(createVMHandler))
 	http.HandleFunc("/status", requireLogin(statusHandler))
+	http.HandleFunc("/api/jobs", requireLogin(listJobsHandler))
 
 	fmt.Println("Server started")
-	log.Fatal(http.ListenAndServe(":" + PORT, nil))
+	log.Fatal(http.ListenAndServe(":"+PORT, nil))
+}
+
+func listJobsHandler(w http.ResponseWriter, r *http.Request) {
+	type jobResp struct {
+		ID          string `json:"id"`
+		Status      string `json:"status"`
+		IP          string `json:"ip"`
+		Servername  string `json:"servername"`
+	}
+
+	var result []jobResp
+	jobs.Range(func(key, value interface{}) bool {
+		j := value.(*Job)
+		result = append(result, jobResp{
+			ID:         key.(string),
+			Status:     j.Status,
+			IP:         j.IP,
+			Servername: j.Servername,
+		})
+		return true
+	})
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(result)
 }
 
 func copyFile(src, dst string) {

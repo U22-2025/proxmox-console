@@ -11,7 +11,7 @@ import (
 	"encoding/json"
 )
 
-func runTerraformJob(jobID string, req VMRequest) {
+func runTerraformJob(jobID string, req *VMRequest) {
 	// 実行用ディレクトリ作成
 	workdir := filepath.Join("terraform", fmt.Sprintf("run_%d", time.Now().Unix()))
 	os.MkdirAll(workdir, 0755)
@@ -24,8 +24,8 @@ func runTerraformJob(jobID string, req VMRequest) {
 	jobs.Store(jobID, job)
 	job.Status = "running(init)"
 
-    logFile, _ := os.Create(job.LogPath)
-    defer logFile.Close()
+	logFile, _ := os.Create(job.LogPath)
+	defer logFile.Close()
 
 	hash, err := hashPasswordForLinux(req.Password)
 	if err != nil {
@@ -35,13 +35,13 @@ func runTerraformJob(jobID string, req VMRequest) {
 	}
 
 	tfvars := fmt.Sprintf(`
-	servername    = "%s"
-	cpu           = %d
-	memory        = %d
-	hdd           = %d
-	username      = "%s"
-	password_hash = "%s"
-	`,
+servername    = "%s"
+cpu           = %d
+memory        = %d
+hdd           = %d
+username      = "%s"
+password_hash = "%s"
+`,
 		req.Servername, req.CPU, req.Memory, req.HDD, req.Username, hash,
 	)
 
@@ -58,19 +58,19 @@ func runTerraformJob(jobID string, req VMRequest) {
 	initCmd := exec.Command("terraform", "init")
 	initCmd.Dir = workdir
 	if _, err := runCmdWithLog(initCmd, logFile); err != nil {
-        job.Status = "error"
+		job.Status = "error"
 		fmt.Println("Error running terraform init:", err)
-        return
-    }
+		return
+	}
 
 	job.Status = "running(apply)"
 	applyCmd := exec.Command("terraform", "apply", "-auto-approve", "-var-file=runtime.tfvars")
 	applyCmd.Dir = workdir
 	if _, err := runCmdWithLog(applyCmd, logFile); err != nil {
-        job.Status = "error"
+		job.Status = "error"
 		fmt.Println("Error running terraform apply:", err)
-        return
-    }
+		return
+	}
 
 	job.IP = getVMIP(job)
 	job.Status = "done"
@@ -84,13 +84,13 @@ func getVMIP(job *Job) string {
 	cmd := exec.Command("terraform", "output", "-json", "vm_ip")
 	cmd.Dir = job.Workdir
 
-	out, err := runCmdWithLog(cmd, logFile) // ← ここが重要
+	out, err := runCmdWithLog(cmd, logFile)
 	if err != nil {
 		job.Status = "error"
 		fmt.Println("Error getting VM IP:", err)
 		return ""
 	}
-	
+
 	var ips []string
 	if err := json.Unmarshal(out, &ips); err != nil {
 		fmt.Println("Error parsing IP output:", err)
@@ -109,7 +109,6 @@ func createVMHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	jobID := fmt.Sprintf("%d", time.Now().UnixNano())
-	jobs.Store(jobID, &Job{Status: "running"})
 
 	req := VMRequest{
 		CPU:        atoiSafe(r.FormValue("cpu")),
@@ -120,7 +119,15 @@ func createVMHandler(w http.ResponseWriter, r *http.Request) {
 		Password:   r.FormValue("password"),
 	}
 
-	go runTerraformJob(jobID, req)
+	jobs.Store(jobID, &Job{Status: "running", Servername: req.Servername})
+
+	go runTerraformJob(jobID, &req)
+
+	if r.Header.Get("Accept") == "application/json" {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"job_id": jobID})
+		return
+	}
 	http.Redirect(w, r, "/status.html?id="+jobID, http.StatusSeeOther)
 }
 
@@ -136,7 +143,7 @@ func statusHandler(w http.ResponseWriter, r *http.Request) {
 	job := jobAny.(*Job)
 	logBytes, _ := os.ReadFile(job.LogPath)
 
-    resp := map[string]string{
+	resp := map[string]string{
 		"status": job.Status,
 		"ip":     job.IP,
 		"log":    string(logBytes),

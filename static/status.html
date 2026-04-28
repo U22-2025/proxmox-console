@@ -2,150 +2,104 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>VM作成ステータス</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VM作成 — ステータス</title>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  font-family: sans-serif;
-  background: #0d0d0d;
-  min-height: 100vh;
-  padding: 2.5rem 1rem;
-}
-.container {
-  max-width: 540px;
-  margin: auto;
-  background: #161616;
-  padding: 1.75rem 2rem;
-  border-radius: 12px;
-  border: 0.5px solid #272727;
-}
-h2 {
-  font-size: 15px;
-  font-weight: 500;
-  color: #e2e2e2;
-  margin-bottom: 1.5rem;
-  letter-spacing: 0.01em;
-}
-.info-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 1.5rem;
-}
-.info-card {
-  background: #1f1f1f;
-  border: 0.5px solid #2a2a2a;
-  border-radius: 8px;
-  padding: 12px 14px;
-}
-.info-card .card-label {
-  font-size: 11px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: #555;
-  margin-bottom: 6px;
-}
-.info-card .card-value {
-  font-size: 15px;
-  font-weight: 500;
-  color: #e2e2e2;
-  min-height: 22px;
-}
-#status-val { color: #eab308; }
-#status-val.done { color: #5dcaa5; }
-#status-val.error { color: #f87171; }
-#ip-val { color: #7db8f0; font-family: monospace; font-size: 14px; }
-
-.log-label {
-  font-size: 11px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: #555;
-  margin-bottom: 8px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.log-label .live-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #1d9e75;
-  animation: pulse 1.5s infinite;
-  display: inline-block;
-}
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
-}
-.log-box {
-  background: #0d0d0d;
-  border: 0.5px solid #272727;
-  border-radius: 8px;
-  padding: 12px 14px;
-  height: 320px;
-  overflow-y: auto;
-  font-family: monospace;
-  font-size: 12px;
-  line-height: 1.7;
-  color: #aaa;
-  white-space: pre-wrap;
-  word-break: break-all;
-}
-.log-box::-webkit-scrollbar { width: 6px; }
-.log-box::-webkit-scrollbar-track { background: transparent; }
-.log-box::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 3px; }
-.log-box::-webkit-scrollbar-thumb:hover { background: #3a3a3a; }
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;color:#fff;font-family:'Inter',system-ui,sans-serif}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 </style>
 </head>
 <body>
-<div class="container">
-  <h2>仮想マシン作成</h2>
-
-  <div class="info-grid">
-    <div class="info-card">
-      <div class="card-label">ステータス</div>
-      <div class="card-value" id="status-val">—</div>
-    </div>
-    <div class="info-card">
-      <div class="card-label">IP アドレス</div>
-      <div class="card-value" id="ip-val">—</div>
-    </div>
-  </div>
-
-  <div class="log-label">
-    ログ <span class="live-dot" id="dot"></span>
-  </div>
-  <div class="log-box" id="log"></div>
-</div>
-
+<div id="root"></div>
 <script>
-const id = new URLSearchParams(location.search).get("id");
 
-const ansiColors = {
-  30: '#555', 31: '#f87171', 32: '#5dcaa5', 33: '#eab308',
-  34: '#7db8f0', 35: '#c084fc', 36: '#67e8f9', 37: '#e2e2e2',
-  90: '#555', 91: '#f87171', 92: '#5dcaa5', 93: '#eab308',
-  94: '#7db8f0', 95: '#c084fc', 96: '#67e8f9', 97: '#e2e2e2',
+var iconPaths = {
+  server: "M5 4H4a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h1m6 0h2a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2M5 14H4a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h1m6 0h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-2",
+  monitor: "M9 5H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-4M8 21h8m-4-4v4",
+  hardDrive: "M22 12H2M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11zM6 16h.01M10 16h.01",
+  database: "M12 2C6.5 2 2 4.5 2 7v10c0 2.5 4.5 5 10 5s10-2.5 10-5V7c0-2.5-4.5-5-10-5z M2 7c0 2.5 4.5 5 10 5s10-2.5 10-5 M2 17c0 2.5 4.5 5 10 5s10-2.5 10-5",
+  chevronDown: "m6 9 6 6 6-6",
+  chevronRight: "m9 18 6-6-6-6",
+  search: "m21 21-4.3-4.3M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14z",
+  bell: "M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0",
+  refresh: "M1 4v6h6M23 20v-6h-6M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15",
+  settings: "M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
+  shield: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z",
+  network: "M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z",
+  package: "M16.5 9.4 7.55 4.24M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16zM3.27 6.96 12 12.01l8.73-5.05M12 22.08V12",
+  folder: "M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2z",
+  plus: "M12 5v14M5 12h14",
+  logOut: "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9",
+};
+
+function Icon(props) {
+  return h("svg", {
+    width: props.size || 16, height: props.size || 16, viewBox: "0 0 24 24",
+    fill: "none", stroke: props.color || "#fff", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round",
+    style: Object.assign({ flexShrink: 0 }, props.style || {}),
+  }, h("path", { d: iconPaths[props.name] }));
+}
+
+var h = React.createElement;
+var useState = React.useState;
+var useEffect = React.useEffect;
+var useRef = React.useRef;
+
+function TreeItem(iconName, label, depth, children, defaultOpen, isActive, onClick) {
+  var _c = useState(!!defaultOpen); var open = _c[0]; var setOpen = _c[1];
+  var _d = useState(false); var hover = _d[0]; var setHover = _d[1];
+  var has = !!(children && children.length);
+  return h("div", null,
+    h("div", {
+      onClick: function() { if (has) setOpen(!open); if (onClick) onClick(); },
+      onMouseEnter: function() { setHover(true); },
+      onMouseLeave: function() { setHover(false); },
+      style: {
+        display: "flex", alignItems: "center", gap: 7,
+        padding: "6px 16px 6px " + (16 + (depth || 0) * 16) + "px",
+        cursor: "pointer", fontSize: 13,
+        color: isActive ? "#fff" : hover ? "#aaa" : "#555",
+        background: isActive ? "#111" : "transparent",
+        borderLeft: "2px solid " + (isActive ? "#fff" : "transparent"),
+        userSelect: "none",
+      }
+    },
+      has
+        ? h(Icon, { name: open ? "chevronDown" : "chevronRight", size: 11, color: "#333" })
+        : h("span", { style: { width: 11, flexShrink: 0 } }),
+      h(Icon, { name: iconName, size: 13 }),
+      h("span", { style: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, label)
+    ),
+    open && children
+  );
+}
+
+var ansiColors = {
+  30: "#555", 31: "#f87171", 32: "#5dcaa5", 33: "#eab308",
+  34: "#7db8f0", 35: "#c084fc", 36: "#67e8f9", 37: "#e2e2e2",
+  90: "#555", 91: "#f87171", 92: "#5dcaa5", 93: "#eab308",
+  94: "#7db8f0", 95: "#c084fc", 96: "#67e8f9", 97: "#e2e2e2",
 };
 
 function ansiToHtml(str) {
-  const esc = str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  let out = '', i = 0, open = false;
+  var esc = str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  var out = "", i = 0, open = false;
   while (i < esc.length) {
-    if (esc[i] === '\x1b' && esc[i + 1] === '[') {
-      const j = esc.indexOf('m', i + 2);
+    if (esc[i] === "\x1b" && esc[i + 1] === "[") {
+      var j = esc.indexOf("m", i + 2);
       if (j === -1) { out += esc[i]; i++; continue; }
-      const codes = esc.slice(i + 2, j).split(';').map(Number);
-      if (open) { out += '</span>'; open = false; }
-      let style = '';
-      for (const c of codes) {
-        if (c === 0) { style = ''; open = false; }
-        else if (c === 1) style += 'font-weight:700;';
-        else if (c === 4) style += 'text-decoration:underline;';
-        else if (ansiColors[c]) style += 'color:' + ansiColors[c] + ';';
+      var codes = esc.slice(i + 2, j).split(";").map(Number);
+      if (open) { out += "</span>"; open = false; }
+      var style = "";
+      for (var k = 0; k < codes.length; k++) {
+        var c = codes[k];
+        if (c === 0) { style = ""; open = false; }
+        else if (c === 1) style += "font-weight:700;";
+        else if (c === 4) style += "text-decoration:underline;";
+        else if (ansiColors[c]) style += "color:" + ansiColors[c] + ";";
       }
       if (style) { out += '<span style="' + style + '">'; open = true; }
       i = j + 1;
@@ -153,35 +107,160 @@ function ansiToHtml(str) {
       out += esc[i]; i++;
     }
   }
-  if (open) out += '</span>';
+  if (open) out += "</span>";
   return out;
 }
 
-setInterval(async () => {
-  try {
-    const res = await fetch("/status?id=" + id);
-    const data = await res.json();
+function App() {
+  var id = new URLSearchParams(window.location.search).get("id");
 
-    const statusEl = document.getElementById("status-val");
-    statusEl.textContent = data.status ?? "—";
-    statusEl.className = "";
-    if (data.status === "done") statusEl.classList.add("done");
-    else if (data.status === "error") statusEl.classList.add("error");
+  var _s = useState("—"); var status = _s[0]; var setStatus = _s[1];
+  var _ip = useState("—"); var ip = _ip[0]; var setIp = _ip[1];
+  var _log = useState(""); var log = _log[0]; var setLog = _log[1];
+  var _done = useState(false); var done = _done[0]; var setDone = _done[1];
+  var logRef = useRef(null);
 
-    const logEl = document.getElementById("log");
-    const isBottom = logEl.scrollHeight - logEl.scrollTop <= logEl.clientHeight + 8;
-    logEl.innerHTML = ansiToHtml(data.log ?? "");
-    if (isBottom) logEl.scrollTop = logEl.scrollHeight;
+  useEffect(function() {
+    if (!id) return;
+    var iv = setInterval(function() {
+      fetch("/status?id=" + id).then(function(r) { return r.json(); }).then(function(data) {
+        setStatus(data.status || "—");
+        setIp(data.ip || "—");
+        setLog(data.log || "");
 
-    if (data.status === "done") {
-      document.getElementById("ip-val").textContent = data.ip ?? "—";
-      document.getElementById("dot").style.background = "#5dcaa5";
-      document.getElementById("dot").style.animation = "none";
+        if (data.status === "done" || data.status === "error") {
+          setDone(true);
+          if (data.status === "done") clearInterval(iv);
+        }
+      }).catch(function() {});
+    }, 2000);
+    return function() { clearInterval(iv); };
+  }, [id]);
+
+  useEffect(function() {
+    if (logRef.current) {
+      var el = logRef.current;
+      var isBottom = el.scrollHeight - el.scrollTop <= el.clientHeight + 8;
+      if (isBottom) el.scrollTop = el.scrollHeight;
     }
-  } catch (e) {
-    console.error(e);
-  }
-}, 2000);
+  }, [log]);
+
+  var statusColor = status === "done" ? "#22c55e" : status === "error" ? "#f43f5e" : "#f59e0b";
+  var dotAnimation = done ? "none" : "pulse 1.5s infinite";
+  var dotBg = status === "done" ? "#22c55e" : status === "error" ? "#f43f5e" : "#f59e0b";
+
+  return h("div", { style: { display: "flex", flexDirection: "column", height: "100vh", minHeight: 600, background: "#000", color: "#fff", fontFamily: "'Inter', system-ui, sans-serif" } },
+
+    /* Header */
+    h("div", { style: { display: "flex", alignItems: "center", gap: 16, padding: "0 24px", height: 52, borderBottom: "1px solid #111", flexShrink: 0 } },
+      h("a", { href: "/", style: { display: "flex", alignItems: "center", gap: 10, minWidth: 160, textDecoration: "none" } },
+        h(Icon, { name: "server", size: 16, color: "#fff" }),
+        h("span", { style: { fontSize: 14, fontWeight: 600, color: "#fff", letterSpacing: "-0.01em" } }, "Proxmox Console"),
+        h("span", { style: { fontSize: 11, color: "#333", marginLeft: 2 } }, "v1.0")
+      ),
+      h("div", { style: { flex: 1, maxWidth: 320, position: "relative" } },
+        h(Icon, { name: "search", size: 12, color: "#333", style: { position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" } }),
+        h("input", { type: "text", placeholder: "Search…", "aria-label": "Search", style: { width: "100%", background: "#000", border: "1px solid #111", borderRadius: 4, padding: "6px 10px 6px 28px", color: "#fff", fontSize: 12, outline: "none", boxSizing: "border-box" } })
+      ),
+      h("div", { style: { marginLeft: "auto", display: "flex", alignItems: "center", gap: 20 } },
+        h("button", { "aria-label": "Notifications", style: { background: "none", border: "none", cursor: "pointer", padding: 0 } }, h(Icon, { name: "bell", size: 15, color: "#333" })),
+        h("button", { "aria-label": "Logout", style: { background: "none", border: "none", cursor: "pointer", padding: 0 } }, h(Icon, { name: "logOut", size: 15, color: "#333" }))
+      )
+    ),
+
+    /* Body */
+    h("div", { style: { display: "flex", flex: 1, overflow: "hidden" } },
+
+      /* Sidebar */
+      h("div", { style: { width: 210, minWidth: 210, borderRight: "1px solid #111", overflowY: "auto", flexShrink: 0, paddingTop: 8 } },
+        h("div", { style: { padding: "8px 18px 4px", fontSize: 10, color: "#2a2a2a", textTransform: "uppercase", letterSpacing: "0.1em" } }, "Resources"),
+        TreeItem("shield", "Datacenter", 0, [
+          TreeItem("server", "pve-node1", 1, [
+            TreeItem("hardDrive", "Storage", 2, [
+              TreeItem("database", "local (LVM)", 3),
+            ], true),
+            TreeItem("network", "Network", 2),
+          ], true),
+        ], true),
+        h("div", { style: { padding: "16px 18px 4px", fontSize: 10, color: "#2a2a2a", textTransform: "uppercase", letterSpacing: "0.1em" } }, "Actions"),
+        TreeItem("plus", "新規作成", 0, null, false, false, function() { window.location.href = "/resource.html"; }),
+        h("div", { style: { padding: "16px 18px 4px", fontSize: 10, color: "#2a2a2a", textTransform: "uppercase", letterSpacing: "0.1em" } }, "Manage"),
+        TreeItem("folder", "Backups"),
+        TreeItem("shield", "Firewall"),
+        TreeItem("settings", "Configuration")
+      ),
+
+      /* Main */
+      h("div", { style: { flex: 1, overflowY: "auto", padding: "32px 36px", display: "flex", flexDirection: "column", gap: 24 } },
+
+        /* Breadcrumb */
+        h("div", { style: { display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#333" } },
+          h("a", { href: "/", style: { color: "#444", textDecoration: "none" } }, "Dashboard"),
+          h("span", null, "/"),
+          h("span", { style: { color: "#fff" } }, "仮想マシン作成")
+        ),
+
+        /* Title */
+        h("div", { style: { display: "flex", alignItems: "center", gap: 12, marginBottom: 4 } },
+          h("span", { style: { fontSize: 22, fontWeight: 300, color: "#fff", letterSpacing: "-0.02em" } }, "仮想マシン作成"),
+          h("span", { style: { display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: statusColor } },
+            h("span", { style: { width: 7, height: 7, borderRadius: "50%", background: dotBg, flexShrink: 0, animation: dotAnimation } }),
+            status
+          )
+        ),
+
+        /* Divider */
+        h("div", { style: { borderTop: "1px solid #111" } }),
+
+        /* Info cards */
+        h("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, maxWidth: 400 } },
+          h("div", { style: { padding: "14px 18px", border: "1px solid #111" } },
+            h("div", { style: { fontSize: 11, color: "#333", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.07em" } }, "ステータス"),
+            h("div", { style: { fontSize: 15, color: statusColor, fontWeight: 500 } }, status)
+          ),
+          h("div", { style: { padding: "14px 18px", border: "1px solid #111" } },
+            h("div", { style: { fontSize: 11, color: "#333", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.07em" } }, "IP アドレス"),
+            h("div", { style: { fontSize: 14, color: ip !== "—" ? "#7db8f0" : "#333", fontFamily: "monospace" } }, ip)
+          )
+        ),
+
+        /* Log */
+        h("div", null,
+          h("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 10 } },
+            h("span", { style: { fontSize: 11, color: "#444", textTransform: "uppercase", letterSpacing: "0.07em" } }, "ログ"),
+            h("span", { style: { width: 7, height: 7, borderRadius: "50%", background: dotBg, animation: dotAnimation, display: "inline-block" } })
+          ),
+          h("div", {
+            ref: logRef,
+            style: {
+              background: "#0a0a0a", border: "1px solid #111", borderRadius: 4,
+              padding: "14px 16px", height: 380, overflowY: "auto",
+              fontFamily: "monospace", fontSize: 12, lineHeight: 1.7,
+              color: "#aaa", whiteSpace: "pre-wrap", wordBreak: "break-all",
+            },
+            dangerouslySetInnerHTML: { __html: ansiToHtml(log) }
+          })
+        ),
+
+        /* Back button */
+        done ? h("div", { style: { display: "flex", gap: 8, marginTop: 4 } },
+          h("a", {
+            href: "/",
+            style: {
+              textDecoration: "none",
+              background: "transparent", border: "1px solid #111", borderRadius: 4,
+              padding: "10px 20px", fontSize: 13, color: "#444", cursor: "pointer",
+              display: "flex", alignItems: "center", gap: 6,
+            }
+          }, "ダッシュボードに戻る")
+        ) : null
+      )
+    )
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(h(App));
+
 </script>
 </body>
 </html>
