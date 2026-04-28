@@ -34,7 +34,7 @@ func main() {
 		fs.ServeHTTP(w, r)
 	}))
 	http.HandleFunc("/create-vm", requireLogin(createVMHandler))
-	http.HandleFunc("/status", requireLogin(restatusHandler))
+	http.HandleFunc("/status", requireLogin(statusHandler))
 
 	fmt.Println("Server started at http://172.32.0.70:" + PORT)
 	log.Fatal(http.ListenAndServe(":" + PORT, nil))
