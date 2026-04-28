@@ -38,9 +38,26 @@ func main() {
 	http.HandleFunc("/create-vm", requireLogin(createVMHandler))
 	http.HandleFunc("/status", requireLogin(statusHandler))
 	http.HandleFunc("/api/jobs", requireLogin(listJobsHandler))
+	http.HandleFunc("/logout", logoutHandler)
 
 	fmt.Println("Server started")
 	log.Fatal(http.ListenAndServe(":"+PORT, nil))
+}
+
+func logoutHandler(w http.ResponseWriter, r *http.Request) {
+	req, _ := http.NewRequest("GET", AppConfig.Kratos.PublicURL+"/self-service/logout/browser", nil)
+	for _, c := range r.Cookies() {
+		req.AddCookie(c)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadGateway)
+		return
+	}
+	defer resp.Body.Close()
+
+	w.Header().Set("Content-Type", "application/json")
+	io.Copy(w, resp.Body)
 }
 
 func listJobsHandler(w http.ResponseWriter, r *http.Request) {

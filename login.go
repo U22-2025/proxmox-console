@@ -15,7 +15,7 @@ func requireLogin(next http.HandlerFunc) http.HandlerFunc {
 
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil || resp.StatusCode != 200 {
-			http.Redirect(w, r, AppConfig.Kratos.LoginURL, http.StatusSeeOther)
+			http.Redirect(w, r, AppConfig.KratosLoginURL(), http.StatusSeeOther)
 			return
 		}
 

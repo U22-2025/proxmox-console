@@ -7,15 +7,20 @@ import (
 type Config struct {
 	Kratos struct {
 		PublicURL string `yaml:"public_url"`
-		LoginURL  string `yaml:"login_url"`
+		AdminURL  string `yaml:"admin_url"`
+		UIURL     string `yaml:"ui_url"`
 	} `yaml:"kratos"`
 
 	App struct {
-		AfterLoginRedirect string `yaml:"after_login_redirect"`
+		URL string `yaml:"url"`
 	} `yaml:"app"`
 }
 
 var AppConfig Config
+
+func (c *Config) KratosLoginURL() string {
+	return c.Kratos.UIURL + "/login"
+}
 
 func loadConfig() {
 	b, err := os.ReadFile("config.yaml")
