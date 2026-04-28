@@ -1,4 +1,5 @@
 proxmox_endpoint = "https://192.168.1.10:8006"
 proxmox_username = "root@pam"
 proxmox_password = "your-password"
+proxmox_api_token  = ""
 node_name        = "Host-1"
