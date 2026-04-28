@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"time"
 	"encoding/json"
+	"context"
+	tfexec "github.com/hashicorp/terraform-exec/tfexec"
 )
 
 func runTerraformJob(jobID string, req VMRequest) {
@@ -21,8 +23,8 @@ func runTerraformJob(jobID string, req VMRequest) {
 
 	job.Workdir = workdir
 	job.LogPath = filepath.Join(workdir, "terraform.log")
-	jobs.Store(jobID, job)
 	job.Status = "running(init)"
+	jobs.Store(jobID, job)
 
     logFile, _ := os.Create(job.LogPath)
     defer logFile.Close()
@@ -55,22 +57,43 @@ func runTerraformJob(jobID string, req VMRequest) {
 	copyFile("terraform/cloud-config.yaml", filepath.Join(workdir, "cloud-config.yaml"))
 
 	// Terraform実行
-	initCmd := exec.Command("terraform", "init")
-	initCmd.Dir = workdir
-	if _, err := runCmdWithLog(initCmd, logFile); err != nil {
-        job.Status = "error"
-		fmt.Println("Error running terraform init:", err)
-        return
-    }
+	tf, err := tfexec.NewTerraform(workdir, "terraform")
+	if err != nil {
+		job.Status = "error"
+		fmt.Println("Error creating Terraform executor:", err)
+		return
+	}
+	tf.SetStdout(logFile)
+	tf.SetStderr(logFile)
+
+	ctx := context.Background()
+
+	// init
+	if err := tf.Init(ctx, tfexec.Upgrade(true)); err != nil {
+		job.Status = "error"
+		return
+	}
 
 	job.Status = "running(apply)"
-	applyCmd := exec.Command("terraform", "apply", "-auto-approve", "-var-file=runtime.tfvars")
-	applyCmd.Dir = workdir
-	if _, err := runCmdWithLog(applyCmd, logFile); err != nil {
-        job.Status = "error"
-		fmt.Println("Error running terraform apply:", err)
-        return
-    }
+	jobs.Store(jobID, job)
+
+	// apply
+	if err := tf.Apply(ctx,
+		tfexec.VarFile("runtime.tfvars"),
+	); err != nil {
+		job.Status = "error"
+		fmt.Println("Error applying Terraform configuration:", err)
+		return
+	}
+
+	// apply
+	if err := tf.Apply(ctx,
+		tfexec.VarFile("runtime.tfvars"),
+	); err != nil {
+		job.Status = "error"
+		fmt.Println("Error applying Terraform configuration:", err)
+		return
+	}
 
 	job.IP = getVMIP(job)
 	job.Status = "done"
