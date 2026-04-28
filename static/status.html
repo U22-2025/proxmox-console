@@ -124,16 +124,43 @@ h2 {
 <script>
 const id = new URLSearchParams(location.search).get("id");
 
+const ansiColors = {
+  30: '#555', 31: '#f87171', 32: '#5dcaa5', 33: '#eab308',
+  34: '#7db8f0', 35: '#c084fc', 36: '#67e8f9', 37: '#e2e2e2',
+  90: '#555', 91: '#f87171', 92: '#5dcaa5', 93: '#eab308',
+  94: '#7db8f0', 95: '#c084fc', 96: '#67e8f9', 97: '#e2e2e2',
+};
+
+function ansiToHtml(str) {
+  const esc = str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  let out = '', i = 0, open = false;
+  while (i < esc.length) {
+    if (esc[i] === '\x1b' && esc[i + 1] === '[') {
+      const j = esc.indexOf('m', i + 2);
+      if (j === -1) { out += esc[i]; i++; continue; }
+      const codes = esc.slice(i + 2, j).split(';').map(Number);
+      if (open) { out += '</span>'; open = false; }
+      let style = '';
+      for (const c of codes) {
+        if (c === 0) { style = ''; open = false; }
+        else if (c === 1) style += 'font-weight:700;';
+        else if (c === 4) style += 'text-decoration:underline;';
+        else if (ansiColors[c]) style += 'color:' + ansiColors[c] + ';';
+      }
+      if (style) { out += '<span style="' + style + '">'; open = true; }
+      i = j + 1;
+    } else {
+      out += esc[i]; i++;
+    }
+  }
+  if (open) out += '</span>';
+  return out;
+}
+
 setInterval(async () => {
   try {
     const res = await fetch("/status?id=" + id);
-
-    // ← ここ追加
-    const text = await res.text();
-    console.log("RAW RESPONSE:", text);
-
-    const data = JSON.parse(text);
-    console.log("PARSED:", data);
+    const data = await res.json();
 
     const statusEl = document.getElementById("status-val");
     statusEl.textContent = data.status ?? "—";
@@ -143,7 +170,7 @@ setInterval(async () => {
 
     const logEl = document.getElementById("log");
     const isBottom = logEl.scrollHeight - logEl.scrollTop <= logEl.clientHeight + 8;
-    logEl.textContent = data.log ?? "";
+    logEl.innerHTML = ansiToHtml(data.log ?? "");
     if (isBottom) logEl.scrollTop = logEl.scrollHeight;
 
     if (data.status === "done") {
