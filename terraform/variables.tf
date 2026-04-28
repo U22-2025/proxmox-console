@@ -3,9 +3,16 @@ variable "proxmox_endpoint" {
   description = "Proxmox API endpoint"
 }
 
-variable "proxmox_api_token" {
-  type      = string
-  sensitive = true
+variable "proxmox_username" {
+  type        = string
+  description = "Proxmox username"
+  sensitive   = true
+}
+
+variable "proxmox_password" {
+  type        = string
+  description = "Proxmox password"
+  sensitive   = true
 }
 
 variable "node_name" {}
