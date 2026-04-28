@@ -44,6 +44,7 @@ func main() {
 func copyFile(src, dst string) {
 	input, err := os.ReadFile(src)
 	if err != nil {
+		fmt.Println("Error reading source file:", err)
 		return
 	}
 	os.WriteFile(dst, input, 0644)
@@ -56,6 +57,9 @@ func runCmdWithLog(cmd *exec.Cmd, logFile *os.File) ([]byte, error) {
 	cmd.Stderr = io.MultiWriter(logFile, &buf)
 
 	err := cmd.Run()
+	if err != nil {
+		log.Printf("Command failed: %v", err)
+	}
 
 	return buf.Bytes(), err
 }
@@ -65,6 +69,7 @@ func hashPasswordForLinux(password string) (string, error) {
 	saltBytes := make([]byte, 16)
 	_, err := rand.Read(saltBytes)
 	if err != nil {
+		fmt.Println("Error generating salt:", err)
 		return "", err
 	}
 
@@ -73,6 +78,7 @@ func hashPasswordForLinux(password string) (string, error) {
 	// $6$ = SHA-512 crypt
 	hash, err := crypt.Crypt(password, "$6$"+salt)
 	if err != nil {
+		fmt.Println("Error hashing password:", err)
 		return "", err
 	}
 

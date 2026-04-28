@@ -30,7 +30,9 @@ func runTerraformJob(jobID string, req VMRequest) {
 
 	hash, err := hashPasswordForLinux(req.Password)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println("Error hashing password:", err)
+		job.Status = "error"
+		return
 	}
 
 	tfvars := fmt.Sprintf(`
@@ -58,6 +60,7 @@ func runTerraformJob(jobID string, req VMRequest) {
 	initCmd.Dir = workdir
 	if _, err := runCmdWithLog(initCmd, logFile); err != nil {
         job.Status = "error"
+		fmt.Println("Error running terraform init:", err)
         return
     }
 
@@ -66,6 +69,7 @@ func runTerraformJob(jobID string, req VMRequest) {
 	applyCmd.Dir = workdir
 	if _, err := runCmdWithLog(applyCmd, logFile); err != nil {
         job.Status = "error"
+		fmt.Println("Error running terraform apply:", err)
         return
     }
 
@@ -84,12 +88,13 @@ func getVMIP(job *Job) string {
 	out, err := runCmdWithLog(cmd, logFile) // ← ここが重要
 	if err != nil {
 		job.Status = "error"
+		fmt.Println("Error getting VM IP:", err)
 		return ""
 	}
 	
 	var ips []string
 	if err := json.Unmarshal(out, &ips); err != nil {
-		log.Printf("Failed to parse IP output: %v", err)
+		fmt.Println("Error parsing IP output:", err)
 		return ""
 	}
 
