@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"time"
 	"encoding/json"
+	"context"
+	tfexec "github.com/hashicorp/terraform-exec/tfexec"
 )
 
 func runTerraformJob(jobID string, req *VMRequest) {
@@ -21,8 +23,8 @@ func runTerraformJob(jobID string, req *VMRequest) {
 
 	job.Workdir = workdir
 	job.LogPath = filepath.Join(workdir, "terraform.log")
-	jobs.Store(jobID, job)
 	job.Status = "running(init)"
+	jobs.Store(jobID, job)
 
 	logFile, _ := os.Create(job.LogPath)
 	defer logFile.Close()
@@ -55,20 +57,32 @@ password_hash = "%s"
 	copyFile("terraform/cloud-config.yaml", filepath.Join(workdir, "cloud-config.yaml"))
 
 	// Terraform実行
-	initCmd := exec.Command("terraform", "init")
-	initCmd.Dir = workdir
-	if _, err := runCmdWithLog(initCmd, logFile); err != nil {
+	tf, err := tfexec.NewTerraform(workdir, "terraform")
+	if err != nil {
 		job.Status = "error"
-		fmt.Println("Error running terraform init:", err)
+		fmt.Println("Error creating Terraform executor:", err)
+		return
+	}
+	tf.SetStdout(logFile)
+	tf.SetStderr(logFile)
+
+	ctx := context.Background()
+
+	// init
+	if err := tf.Init(ctx, tfexec.Upgrade(true)); err != nil {
+		job.Status = "error"
 		return
 	}
 
 	job.Status = "running(apply)"
-	applyCmd := exec.Command("terraform", "apply", "-auto-approve", "-var-file=runtime.tfvars")
-	applyCmd.Dir = workdir
-	if _, err := runCmdWithLog(applyCmd, logFile); err != nil {
+	jobs.Store(jobID, job)
+
+	// apply
+	if err := tf.Apply(ctx,
+		tfexec.VarFile("runtime.tfvars"),
+	); err != nil {
 		job.Status = "error"
-		fmt.Println("Error running terraform apply:", err)
+		fmt.Println("Error applying Terraform configuration:", err)
 		return
 	}
 
@@ -78,22 +92,32 @@ password_hash = "%s"
 }
 
 func getVMIP(job *Job) string {
-	logFile, _ := os.OpenFile(job.LogPath, os.O_APPEND|os.O_WRONLY, 0644)
-	defer logFile.Close()
-
-	cmd := exec.Command("terraform", "output", "-json", "vm_ip")
-	cmd.Dir = job.Workdir
-
-	out, err := runCmdWithLog(cmd, logFile)
+	tf, err := tfexec.NewTerraform(job.Workdir, "terraform")
 	if err != nil {
 		job.Status = "error"
-		fmt.Println("Error getting VM IP:", err)
 		return ""
 	}
 
+	ctx := context.Background()
+
+	// terraform output -json と同じ
+	out, err := tf.Output(ctx)
+	if err != nil {
+		job.Status = "error"
+		return ""
+	}
+
+	// vm_ip という output 名を直接取得
+	v, ok := out["vm_ip"]
+	if !ok {
+		return ""
+	}
+
+	// Value は interface{} なので JSON 経由で安全に []string に
+	b, _ := json.Marshal(v.Value)
+
 	var ips []string
-	if err := json.Unmarshal(out, &ips); err != nil {
-		fmt.Println("Error parsing IP output:", err)
+	if err := json.Unmarshal(b, &ips); err != nil {
 		return ""
 	}
 
