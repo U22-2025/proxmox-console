@@ -1,6 +1,6 @@
 *.env
 *proxmox.auto.tfvars
-*url.yaml
+*config.yaml
 *settings.local.json
 .claude/
 *kratos.yaml
