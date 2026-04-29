@@ -15,7 +15,7 @@ func requireLogin(next http.HandlerFunc) http.HandlerFunc {
 
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil || resp.StatusCode != 200 {
-			w.WriteHeader(http.StatusUnauthorized)
+			http.Redirect(w, r, AppConfig.Kratos.UIURL+"/self-service/login/browser", http.StatusFound)
 			return
 		}
 
