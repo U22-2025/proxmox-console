@@ -8,7 +8,8 @@ serve:
 
 selfservice:
   default_browser_return_url: http://localhost:8080  # ログイン後のリダイレクト先 (AppのURL - 別サーバの可能性あり)
-
+  allowed_return_urls:
+    - http://localhost:8080  # ログイン後のリダイレクト先 (AppのURL - 別サーバの可能性あり)
   methods:
     password:
       enabled: true
