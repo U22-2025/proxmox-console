@@ -1,13 +1,14 @@
 package main
 import(
 	"net/http"
+	"net/url"
 )
 
 func requireLogin(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		url := AppConfig.Kratos.PublicURL + "/sessions/whoami"
-		req, _ := http.NewRequest("GET", url, nil)
+		whoamiURL := AppConfig.Kratos.PublicURL + "/sessions/whoami"
+		req, _ := http.NewRequest("GET", whoamiURL, nil)
 
 		for _, c := range r.Cookies() {
 			req.AddCookie(c)
