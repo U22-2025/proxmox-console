@@ -15,5 +15,4 @@ require (
 	github.com/hashicorp/terraform-json v0.27.2 // indirect
 	github.com/zclconf/go-cty v1.18.1 // indirect
 	golang.org/x/text v0.31.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1
 )
