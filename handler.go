@@ -101,22 +101,32 @@ func runTerraformJob(jobID string, req VMRequest) {
 }
 
 func getVMIP(job *Job) string {
-	logFile, _ := os.OpenFile(job.LogPath, os.O_APPEND|os.O_WRONLY, 0644)
-	defer logFile.Close()
-
-	cmd := exec.Command("terraform", "output", "-json", "vm_ip")
-	cmd.Dir = job.Workdir
-
-	out, err := runCmdWithLog(cmd, logFile) // ← ここが重要
+	tf, err := tfexec.NewTerraform(job.Workdir, "terraform")
 	if err != nil {
 		job.Status = "error"
-		fmt.Println("Error getting VM IP:", err)
 		return ""
 	}
-	
+
+	ctx := context.Background()
+
+	// terraform output -json と同じ
+	out, err := tf.Output(ctx)
+	if err != nil {
+		job.Status = "error"
+		return ""
+	}
+
+	// vm_ip という output 名を直接取得
+	v, ok := out["vm_ip"]
+	if !ok {
+		return ""
+	}
+
+	// Value は interface{} なので JSON 経由で安全に []string に
+	b, _ := json.Marshal(v.Value)
+
 	var ips []string
-	if err := json.Unmarshal(out, &ips); err != nil {
-		fmt.Println("Error parsing IP output:", err)
+	if err := json.Unmarshal(b, &ips); err != nil {
 		return ""
 	}
 
