@@ -194,9 +194,9 @@ func vmDetailHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vmidStr := r.URL.Query().Get("id")
+	vmidStr := r.URL.Query().Get("vmid")
 	if vmidStr == "" {
-		http.Error(w, "missing id", 400)
+		http.Error(w, "missing vmid", 400)
 		return
 	}
 
