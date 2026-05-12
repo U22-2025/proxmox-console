@@ -27,6 +27,10 @@ type VMInfo struct {
 func listUserVMs(userID string) ([]VMInfo, error) {
 	baseDir := filepath.Join("terraform", userID)
 
+	wd, _ := os.Getwd()
+	fmt.Println("WORKDIR:", wd)
+	fmt.Println("SEARCH DIR:", baseDir)
+
 	var vms []VMInfo
 	err := filepath.Walk(baseDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
