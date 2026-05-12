@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 	"encoding/json"
 	"fmt"
+	"strings"
 )
 
 type TFState struct {
