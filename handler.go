@@ -12,9 +12,25 @@ import (
 	tfexec "github.com/hashicorp/terraform-exec/tfexec"
 )
 
-func runTerraformJob(jobID string, req *VMRequest) {
-	// 実行用ディレクトリ作成
-	workdir := filepath.Join("terraform", fmt.Sprintf("run_%d", time.Now().Unix()))
+func runTerraformJob(jobID string, req *VMRequest, httpreq *http.Request) {
+
+	// Kratos からユーザーIDを取得
+	userID, err := getKratosUserIDFromRequest(httpreq)
+	if err != nil {
+		fmt.Println("Error getting Kratos user ID:", err)
+		return
+	}
+
+	// VMリクエストのハッシュを計算
+	hash, err := hashRequest(req)
+	if err != nil {
+		fmt.Println("Error hashing request:", err)
+		return
+	}
+
+	// ユーザディレクトリ配下に
+	// ハッシュ値をディレクトリ名とする実行用ディレクトリを作成
+	workdir := filepath.Join("terraform", userID, hash)
 	os.MkdirAll(workdir, 0755)
 
 	jobAny, _ := jobs.Load(jobID)
@@ -144,7 +160,7 @@ func createVMHandler(w http.ResponseWriter, r *http.Request) {
 
 	jobs.Store(jobID, &Job{Status: "running", Servername: req.Servername})
 
-	go runTerraformJob(jobID, &req)
+	go runTerraformJob(jobID, &req, r)
 
 	if r.Header.Get("Accept") == "application/json" {
 		w.Header().Set("Content-Type", "application/json")
