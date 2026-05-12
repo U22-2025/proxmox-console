@@ -89,8 +89,11 @@ function App() {
 
   useEffect(function() {
     function fetchJobs() {
-      fetch("/api/jobs").then(function(r) { return r.json(); }).then(function(data) {
-        setJobs(data || []);
+      fetch("/api/jobs").then(function(r) {
+        if (r.status === 401) { window.location.href = "/"; return null; }
+        return r.json();
+      }).then(function(data) {
+        if (data) setJobs(data || []);
       }).catch(function() {});
     }
     fetchJobs();
