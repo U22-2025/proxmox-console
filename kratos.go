@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httputil"
-	"net/url"
 )
 
 func getKratosUserIDFromRequest(r *http.Request) (string, error) {
@@ -16,13 +15,14 @@ func getKratosUserIDFromRequest(r *http.Request) (string, error) {
 	}
 
 	client := &http.Client{}
-	url = KratosPublicURL + "/sessions/whoami"
+	url := Kratos.PublicURL + "/sessions/whoami"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return "", err
 	}
 
 	req.AddCookie(cookie)
+	req.Header = r.Header.Clone()
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -48,7 +48,21 @@ func getKratosUserIDFromRequest(r *http.Request) (string, error) {
 }
 
 func hashRequest(req *VMRequest) (string, error) {
-	b, err := json.Marshal(req)
+	safe := struct {
+		CPU        int
+		Memory     int
+		HDD        int
+		Servername string
+		Username   string
+	}{
+		CPU:        req.CPU,
+		Memory:     req.Memory,
+		HDD:        req.HDD,
+		Servername: req.Servername,
+		Username:   req.Username,
+	}
+
+	b, err := json.Marshal(safe)
 	if err != nil {
 		return "", err
 	}
