@@ -28,9 +28,18 @@ func listUserVMs(userID string) ([]VMInfo, error) {
 	baseDir := filepath.Join("terraform", userID)
 
 	var vms []VMInfo
-
 	err := filepath.Walk(baseDir, func(path string, info os.FileInfo, err error) error {
-		if filepath.Base(path) != "terraform.tfstate" {
+		if err != nil {
+			return nil
+		}
+
+		// ディレクトリはそのまま降りる
+		if info.IsDir() {
+			return nil
+		}
+
+		// tfstate だけ処理
+		if info.Name() != "terraform.tfstate" {
 			return nil
 		}
 
@@ -55,7 +64,7 @@ func listUserVMs(userID string) ([]VMInfo, error) {
 				vm := VMInfo{
 					Name:   fmt.Sprint(attr["name"]),
 					VMID:   int(attr["vmid"].(float64)),
-					IP: parseIP(fmt.Sprint(attr["ipconfig0"])),
+					IP:     parseIP(fmt.Sprint(attr["ipconfig0"])),
 					Memory: int(attr["memory"].(float64)),
 					Cores:  int(attr["cores"].(float64)),
 				}
