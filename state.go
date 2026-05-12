@@ -27,10 +27,6 @@ type VMInfo struct {
 func listUserVMs(userID string) ([]VMInfo, error) {
 	baseDir := filepath.Join("terraform", userID)
 
-	wd, _ := os.Getwd()
-	fmt.Println("WORKDIR:", wd)
-	fmt.Println("SEARCH DIR:", baseDir)
-
 	var vms []VMInfo
 	err := filepath.Walk(baseDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -52,29 +48,39 @@ func listUserVMs(userID string) ([]VMInfo, error) {
 			return nil
 		}
 
-		var state TFState
-		if err := json.Unmarshal(b, &state); err != nil {
-			return nil
-		}
+		var raw map[string]interface{}
+		json.Unmarshal(b, &raw)
 
-		for _, r := range state.Resources {
-			if r.Type != "proxmox_vm_qemu" {
+		resources := raw["resources"].([]interface{})
+
+		for _, r := range resources {
+			res := r.(map[string]interface{})
+
+			if res["type"] != "proxmox_virtual_environment_vm" {
 				continue
 			}
 
-			for _, inst := range r.Instances {
-				attr := inst.Attributes
+			instances := res["instances"].([]interface{})
+			attr := instances[0].(map[string]interface{})["attributes"].(map[string]interface{})
 
-				vm := VMInfo{
-					Name:   fmt.Sprint(attr["name"]),
-					VMID:   int(attr["vmid"].(float64)),
-					IP:     parseIP(fmt.Sprint(attr["ipconfig0"])),
-					Memory: int(attr["memory"].(float64)),
-					Cores:  int(attr["cores"].(float64)),
-				}
-
-				vms = append(vms, vm)
+			vm := VMInfo{
+				Name: fmt.Sprint(attr["name"]),
+				VMID: int(attr["vm_id"].(float64)),
 			}
+
+			// CPU cores
+			cpu := attr["cpu"].([]interface{})[0].(map[string]interface{})
+			vm.Cores = int(cpu["cores"].(float64))
+
+			// Memory
+			mem := attr["memory"].([]interface{})[0].(map[string]interface{})
+			vm.Memory = int(mem["dedicated"].(float64))
+
+			// IP
+			ipv4 := attr["ipv4_addresses"].([]interface{})[1].([]interface{})
+			vm.IP = fmt.Sprint(ipv4[0])
+
+			vms = append(vms, vm)
 		}
 
 		return nil
