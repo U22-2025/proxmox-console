@@ -22,7 +22,7 @@ func runTerraformJob(jobID string, req *VMRequest, httpreq *http.Request) {
 	}
 
 	// VMリクエストのハッシュを計算
-	hash, err := hashRequest(req)
+	vmhash, err := hashRequest(req)
 	if err != nil {
 		fmt.Println("Error hashing request:", err)
 		return
@@ -30,7 +30,7 @@ func runTerraformJob(jobID string, req *VMRequest, httpreq *http.Request) {
 
 	// ユーザディレクトリ配下に
 	// ハッシュ値をディレクトリ名とする実行用ディレクトリを作成
-	workdir := filepath.Join("terraform", userID, hash)
+	workdir := filepath.Join("terraform", userID, vmhash)
 	os.MkdirAll(workdir, 0755)
 
 	jobAny, _ := jobs.Load(jobID)

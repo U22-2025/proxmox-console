@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net/http"
-	"net/http/httputil"
 )
 
 func getKratosUserIDFromRequest(r *http.Request) (string, error) {
@@ -15,7 +14,7 @@ func getKratosUserIDFromRequest(r *http.Request) (string, error) {
 	}
 
 	client := &http.Client{}
-	url := Kratos.PublicURL + "/sessions/whoami"
+	url := AppConfig.Kratos.PublicURL + "/sessions/whoami"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return "", err
