@@ -2,66 +2,133 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>サーバ情報入力</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VM作成 — サーバ情報入力</title>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <style>
-body { font-family: sans-serif; background:#f4f6f8; padding:40px; }
-.container { max-width:600px; margin:auto; background:white; padding:30px; border-radius:10px; }
-.form-group { margin-bottom:20px; }
-label { font-weight:bold; display:block; margin-bottom:8px; }
-input { width:100%; padding:8px; }
-button { width:100%; padding:12px; font-size:16px; }
-.summary { background:#eef2f7; padding:10px; margin-bottom:20px; border-radius:5px; }
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;color:#fff;font-family:'Inter',system-ui,sans-serif}
+input:focus{border-color:#fff !important}
 </style>
 </head>
 <body>
-<div class="container">
-<h2>サーバ情報入力</h2>
-
-<div class="summary">
-    <strong>選択されたリソース</strong><br>
-    CPU: <span id="cpuVal"></span> コア<br>
-    メモリ: <span id="memVal"></span> MB<br>
-    HDD: <span id="hddVal"></span> GB
-</div>
-
-<form method="POST" action="/create-vm">
-    <!-- hiddenで引き継ぎ -->
-    <input type="hidden" name="cpu" id="cpu">
-    <input type="hidden" name="memory" id="memory">
-    <input type="hidden" name="hdd" id="hdd">
-
-    <div class="form-group">
-        <label>サーバ名</label>
-        <input type="text" name="servername" required>
-    </div>
-
-    <div class="form-group">
-        <label>ユーザ名</label>
-        <input type="text" name="username" required>
-    </div>
-
-    <div class="form-group">
-        <label>ユーザパスワード</label>
-        <input type="password" name="password" required>
-    </div>
-
-    <button type="submit">仮想マシンを作成</button>
-</form>
-</div>
-
+<div id="root"></div>
 <script>
-const params = new URLSearchParams(window.location.search);
-const cpu = params.get('cpu');
-const memory = params.get('memory');
-const hdd = params.get('hdd');
 
-document.getElementById('cpuVal').textContent = cpu;
-document.getElementById('memVal').textContent = memory;
-document.getElementById('hddVal').textContent = hdd;
+var iconPaths = {
+  server: "M5 4H4a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h1m6 0h2a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2M5 14H4a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h1m6 0h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-2",
+  monitor: "M9 5H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-4M8 21h8m-4-4v4",
+  hardDrive: "M22 12H2M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11zM6 16h.01M10 16h.01",
+  shield: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z",
+  logOut: "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9",
+  arrowLeft: "M19 12H5M12 19l-7-7 7-7",
+};
 
-document.getElementById('cpu').value = cpu;
-document.getElementById('memory').value = memory;
-document.getElementById('hdd').value = hdd;
+function Icon(props) {
+  return h("svg", {
+    width: props.size || 16, height: props.size || 16, viewBox: "0 0 24 24",
+    fill: "none", stroke: props.color || "#fff", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round",
+    style: Object.assign({ flexShrink: 0 }, props.style || {}),
+  }, h("path", { d: iconPaths[props.name] }));
+}
+
+var h = React.createElement;
+
+function App() {
+  var params = new URLSearchParams(window.location.search);
+  var cpu = params.get("cpu") || "1";
+  var mem = params.get("memory") || "1024";
+  var hdd = params.get("hdd") || "10";
+
+  var inputStyle = {
+    width: "100%", padding: "10px 14px", fontSize: 14,
+    background: "#0a0a0a", color: "#ccc",
+    border: "1px solid #111", borderRadius: 4, outline: "none",
+  };
+
+  function Field(icon, label, name, placeholder, type) {
+    return h("div", { style: { padding: "24px 32px", border: "1px solid #111" } },
+      h("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 12 } },
+        h(Icon, { name: icon, size: 14, color: "#444" }),
+        h("label", { style: { fontSize: 11, color: "#444", textTransform: "uppercase", letterSpacing: "0.08em" } }, label)
+      ),
+      h("input", { type: type || "text", name: name, placeholder: placeholder, required: true, style: inputStyle })
+    );
+  }
+
+  return h("div", { style: { display: "flex", flexDirection: "column", height: "100vh", minHeight: 600, background: "#000", color: "#fff", fontFamily: "'Inter', system-ui, sans-serif" } },
+
+    /* Header */
+    h("div", { style: { display: "flex", alignItems: "center", padding: "0 32px", height: 52, borderBottom: "1px solid #111", flexShrink: 0 } },
+      h("a", { href: "/", style: { display: "flex", alignItems: "center", gap: 10, textDecoration: "none" } },
+        h(Icon, { name: "server", size: 16, color: "#fff" }),
+        h("span", { style: { fontSize: 14, fontWeight: 600, color: "#fff", letterSpacing: "-0.01em" } }, "Proxmox Console"),
+        h("span", { style: { fontSize: 11, color: "#333", marginLeft: 2 } }, "v1.0")
+      ),
+      h("div", { style: { marginLeft: "auto" } },
+        h("button", { "aria-label": "Logout", style: { background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 6, color: "#444", fontSize: 12 } },
+          h(Icon, { name: "logOut", size: 14, color: "#444" }), "Logout"
+        )
+      )
+    ),
+
+    /* Main */
+    h("div", { style: { flex: 1, overflowY: "auto", padding: "32px 40px", display: "flex", flexDirection: "column", gap: 0 } },
+
+      /* Breadcrumb */
+      h("div", { style: { display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#333", marginBottom: 24 } },
+        h("a", { href: "/", style: { color: "#444", textDecoration: "none" } }, "Dashboard"),
+        h("span", null, "/"),
+        h("a", { href: "/resource.html", style: { color: "#444", textDecoration: "none" } }, "リソース選択"),
+        h("span", null, "/"),
+        h("span", { style: { color: "#fff" } }, "サーバ情報入力")
+      ),
+
+      /* Title */
+      h("div", { style: { fontSize: 22, fontWeight: 300, color: "#fff", letterSpacing: "-0.02em", marginBottom: 28 } }, "サーバ情報入力"),
+
+      /* Resource summary */
+      h("div", { style: { padding: "16px 32px", border: "1px solid #111", display: "flex", gap: 28, marginBottom: 24 } },
+        [["CPU", cpu + " コア"], ["メモリ", mem + " MB"], ["ディスク", hdd + " GB"]].map(function(s) {
+          return h("div", { key: s[0] },
+            h("div", { style: { fontSize: 11, color: "#333", marginBottom: 3, textTransform: "uppercase", letterSpacing: "0.07em" } }, s[0]),
+            h("div", { style: { fontSize: 13, color: "#888" } }, s[1])
+          );
+        })
+      ),
+
+      /* Form */
+      h("form", {
+        method: "POST", action: "/create-vm",
+        style: { display: "flex", flexDirection: "column", gap: 0 }
+      },
+        h("input", { type: "hidden", name: "cpu", value: cpu }),
+        h("input", { type: "hidden", name: "memory", value: mem }),
+        h("input", { type: "hidden", name: "hdd", value: hdd }),
+
+        Field("server", "サーバ名", "servername", "例: web-server-01"),
+        Field("monitor", "ユーザ名", "username", "例: admin"),
+        Field("shield", "ユーザパスワード", "password", "••••••••", "password"),
+
+        /* Actions */
+        h("div", { style: { padding: "18px 32px", border: "1px solid #111", marginTop: 24, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 } },
+          h("a", {
+            href: "/resource.html?cpu=" + cpu + "&memory=" + mem + "&hdd=" + hdd,
+            style: { textDecoration: "none", background: "transparent", border: "1px solid #111", borderRadius: 4, padding: "10px 20px", fontSize: 13, color: "#444", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }
+          }, h(Icon, { name: "arrowLeft", size: 14, color: "#444" }), "戻る"),
+          h("button", {
+            type: "submit",
+            style: { background: "#fff", color: "#000", border: "none", borderRadius: 4, padding: "10px 28px", fontSize: 13, fontWeight: 500, cursor: "pointer" }
+          }, "仮想マシンを作成")
+        )
+      )
+    )
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(h(App));
+
 </script>
 </body>
 </html>
