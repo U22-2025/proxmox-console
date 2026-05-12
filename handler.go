@@ -170,6 +170,23 @@ func createVMHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/status.html?id="+jobID, http.StatusSeeOther)
 }
 
+func userVMListHandler(w http.ResponseWriter, r *http.Request) {
+	userID, err := getKratosUserIDFromRequest(r)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	vms, err := listUserVMs(userID)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(vms)
+}
+
 func statusHandler(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
 

@@ -35,6 +35,7 @@ func main() {
 		// それ以外は静的ファイルとして配信（一覧は出ない）
 		fs.ServeHTTP(w, r)
 	}))
+	http.HandleFunc("/api/vms", requireLogin(userVMListHandler))
 	http.HandleFunc("/create-vm", requireLogin(createVMHandler))
 	http.HandleFunc("/status", requireLogin(statusHandler))
 	http.HandleFunc("/api/jobs", requireLogin(listJobsHandler))
