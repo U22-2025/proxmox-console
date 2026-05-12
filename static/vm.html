@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>VM Detail</title>
+  <style>
+    body {
+      margin: 0;
+      background: #0b0b0b;
+      color: #fff;
+      font-family: system-ui;
+    }
+    .container {
+      padding: 40px;
+    }
+    .card {
+      background: #111;
+      border: 1px solid #222;
+      border-radius: 8px;
+      padding: 24px;
+      width: 520px;
+    }
+    .row {
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+    .label {
+      color: #777;
+      font-size: 12px;
+    }
+    .value {
+      font-size: 18px;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Virtual Machine</h1>
+    <div id="vm" class="card">Loading...</div>
+  </div>
+
+<script>
+const id = new URLSearchParams(location.search).get("id");
+
+fetch("/api/vm?id=" + id, { credentials: "include" })
+  .then(r => r.json())
+  .then(vm => {
+    const el = document.getElementById("vm");
+    el.innerHTML = `
+      <div class="row">
+        <div class="label">Name</div>
+        <div class="value">${vm.Name}</div>
+      </div>
+
+      <div class="row">
+        <div class="label">VMID</div>
+        <div class="value">${vm.VMID}</div>
+      </div>
+
+      <div class="row">
+        <div class="label">IP Address</div>
+        <div class="value">${vm.IP}</div>
+      </div>
+
+      <div class="row">
+        <div class="label">CPU Cores</div>
+        <div class="value">${vm.Cores}</div>
+      </div>
+
+      <div class="row">
+        <div class="label">Memory</div>
+        <div class="value">${vm.Memory} MB</div>
+      </div>
+    `;
+  });
+</script>
+</body>
+</html>

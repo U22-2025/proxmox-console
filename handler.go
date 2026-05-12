@@ -187,6 +187,38 @@ func userVMListHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(vms)
 }
 
+func vmDetailHandler(w http.ResponseWriter, r *http.Request) {
+	userID, err := getKratosUserIDFromRequest(r)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	vmidStr := r.URL.Query().Get("id")
+	if vmidStr == "" {
+		http.Error(w, "missing id", 400)
+		return
+	}
+
+	vmid, _ := strconv.Atoi(vmidStr)
+
+	vms, err := listUserVMs(userID)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	for _, vm := range vms {
+		if vm.VMID == vmid {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(vm)
+			return
+		}
+	}
+
+	http.Error(w, "vm not found", 404)
+}
+
 func statusHandler(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
 
