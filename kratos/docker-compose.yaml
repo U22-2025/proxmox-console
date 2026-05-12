@@ -1,6 +1,33 @@
 version: "3.9"
 
 services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: kratos
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: kratos
+    volumes:
+      - kratos-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kratos"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  kratos-migrate:
+    image: oryd/kratos:latest
+    command: migrate sql -e --yes -c /etc/config/kratos.yml
+    volumes:
+      - ./kratos.yaml:/etc/config/kratos.yml:ro
+      - ./identity.schema.json:/etc/config/identity.schema.json:ro
+    environment:
+      DSN: postgres://kratos:secret@postgres:5432/kratos?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: on-failure
+
   kratos:
     image: oryd/kratos:latest
     command: serve -c /etc/config/kratos.yml --dev
@@ -10,6 +37,9 @@ services:
     volumes:
       - ./kratos.yaml:/etc/config/kratos.yml:ro
       - ./identity.schema.json:/etc/config/identity.schema.json:ro
+    depends_on:
+      kratos-migrate:
+        condition: service_completed_successfully
 
   kratos-ui:
     image: oryd/kratos-selfservice-ui-node
@@ -19,3 +49,6 @@ services:
       - .env
     depends_on:
       - kratos
+
+volumes:
+  kratos-postgres-data:
