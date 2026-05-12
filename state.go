@@ -16,11 +16,11 @@ type TFState struct {
 }
 
 type VMInfo struct {
-	Name   string
-	VMID   int
-	IP     string
-	Memory int
-	Cores  int
+	Name   string `json:"Name"`
+	VMID   int    `json:"VMID"`
+	IP     string `json:"IP"`
+	Memory int    `json:"Memory"`
+	Cores  int    `json:"Cores"`
 }
 
 func listUserVMs(userID string) ([]VMInfo, error) {
@@ -54,7 +54,7 @@ func listUserVMs(userID string) ([]VMInfo, error) {
 				vm := VMInfo{
 					Name:   fmt.Sprint(attr["name"]),
 					VMID:   int(attr["vmid"].(float64)),
-					IP:     fmt.Sprint(attr["ipconfig0"]),
+					IP: parseIP(fmt.Sprint(attr["ipconfig0"])),
 					Memory: int(attr["memory"].(float64)),
 					Cores:  int(attr["cores"].(float64)),
 				}
@@ -67,4 +67,17 @@ func listUserVMs(userID string) ([]VMInfo, error) {
 	})
 
 	return vms, err
+}
+
+func parseIP(ipconfig string) string {
+	for _, part := range strings.Split(ipconfig, ",") {
+		if strings.HasPrefix(part, "ip=") {
+			ip := strings.TrimPrefix(part, "ip=")
+			if ip == "dhcp" {
+				return "DHCP"
+			}
+			return strings.Split(ip, "/")[0]
+		}
+	}
+	return ""
 }
