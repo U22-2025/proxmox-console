@@ -41,9 +41,9 @@
   </div>
 
 <script>
-const id = new URLSearchParams(location.search).get("id");
+const id = new URLSearchParams(location.search).get("vmid");
 
-fetch("/api/vm?id=" + id, { credentials: "include" })
+fetch("/api/vm?vmid=" + id, { credentials: "include" })
   .then(r => r.json())
   .then(vm => {
     const el = document.getElementById("vm");
