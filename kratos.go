@@ -1,3 +1,14 @@
+package main
+
+import (
+	"crypto/sha256"
+	"encoding/hex"
+	"fmt"
+	"net/http"
+	"net/http/httputil"
+	"net/url"
+)
+
 func getKratosUserIDFromRequest(r *http.Request) (string, error) {
 	cookie, err := r.Cookie("ory_kratos_session")
 	if err != nil {
