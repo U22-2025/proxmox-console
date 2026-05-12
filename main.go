@@ -39,6 +39,7 @@ func main() {
 	http.HandleFunc("/status", requireLogin(statusHandler))
 	http.HandleFunc("/api/jobs", requireLogin(listJobsHandler))
 	http.HandleFunc("/logout", logoutHandler)
+	http.Handle("/kratos/", kratosReverseProxy())
 
 	fmt.Println("Server started")
 	log.Fatal(http.ListenAndServe(":"+PORT, nil))

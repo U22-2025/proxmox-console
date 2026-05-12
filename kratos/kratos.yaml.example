@@ -1,3 +1,4 @@
+# IP=$(hostname -I | awk '{print $1}') && sed -i "s/localhost/${IP}/g" kratos.yml
 dsn: memory
 
 serve:
