@@ -11,7 +11,7 @@
 
   * VMテーブル（Redis）
     * User ID
-      * int
+      * str
       * userテーブル User IDの外部キー
     * VMs
       * int[]
