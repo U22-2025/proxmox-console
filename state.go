@@ -65,7 +65,7 @@ func listUserVMs(userID string) ([]VMInfo, error) {
 
 			vm := VMInfo{
 				Name: fmt.Sprint(attr["name"]),
-				VMID: int(attr["vmid"].(float64)),
+				VMID: int(attr["vm_id"].(float64)),
 			}
 
 			// CPU cores
