@@ -1,4 +1,4 @@
-# sed -i 's/localhost/172.32.0.45/g' kratos/kratos.yaml
+# sed -i 's/localhost/192.168.1.1/g' kratos/kratos.yaml
 dsn: postgres://kratos:secret@postgres:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4
 
 serve:
