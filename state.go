@@ -25,7 +25,7 @@ type VMInfo struct {
 }
 
 func listUserVMs(userID string) ([]VMInfo, error) {
-	baseDir := filepath.Join("terraform", userID)
+	baseDir := filepath.Join("terraform", "vms", userID)
 
 	var vms []VMInfo
 	err := filepath.Walk(baseDir, func(path string, info os.FileInfo, err error) error {

@@ -30,7 +30,7 @@ func runTerraformJob(jobID string, req *VMRequest, httpreq *http.Request) {
 
 	// ユーザディレクトリ配下に
 	// ハッシュ値をディレクトリ名とする実行用ディレクトリを作成
-	workdir := filepath.Join("terraform", userID, vmhash)
+	workdir := filepath.Join("terraform", "vms", userID, vmhash)
 	os.MkdirAll(workdir, 0755)
 
 	jobAny, _ := jobs.Load(jobID)
