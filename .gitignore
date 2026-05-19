@@ -4,3 +4,4 @@
 *settings.local.json
 .claude/
 *kratos.yaml
+terraform/vms/*
