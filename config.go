@@ -1,19 +1,18 @@
 package main
 import (
 	"os"
-	"gopkg.in/yaml.v3"
+	"log"
 )
 
 type Config struct {
 	Kratos struct {
-		PublicURL string `yaml:"public_url"`
-		AdminURL  string `yaml:"admin_url"`
-		UIURL     string `yaml:"ui_url"`
-	} `yaml:"kratos"`
+		APIURL string 
+		UIURL     string 
+	}
 
 	App struct {
-		URL string `yaml:"url"`
-	} `yaml:"app"`
+		URL string
+	}
 }
 
 var AppConfig Config
@@ -21,13 +20,18 @@ var AppConfig Config
 func (c *Config) KratosLoginURL() string {
 	return c.Kratos.UIURL + "/login"
 }
+func mustGetenv(key string) string {
+	v := os.Getenv(key)
+	if v == "" {
+		log.Fatalf("environment variable %s is required", key)
+	}
+	return v
+}
 
 func loadConfig() {
-	b, err := os.ReadFile("config.yaml")
-	if err != nil {
-		panic(err)
-	}
-	if err := yaml.Unmarshal(b, &AppConfig); err != nil {
-		panic(err)
-	}
+	AppConfig = Config{}
+
+	AppConfig.Kratos.APIURL = mustGetenv("KRATOS_API_URL")
+	AppConfig.Kratos.UIURL = mustGetenv("KRATOS_UI_URL")
+	AppConfig.App.URL = mustGetenv("APP_URL")
 }

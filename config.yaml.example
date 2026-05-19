@@ -1,7 +1,0 @@
-# sed -i 's/localhost/192.168.1.10/g' config.yaml
-kratos:
-  public_url: "http://localhost:4433"  # Kratos API (whoami等) - アプリからのサーバー間通信用
-  ui_url: "http://localhost:3000"       # Kratos UI (ログイン/登録画面) - ブラウザリダイレクト用
-
-app:
-  url: "http://localhost:8080"           # このアプリのURL - Kratosのreturn_toに使用

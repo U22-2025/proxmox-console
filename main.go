@@ -47,7 +47,7 @@ func main() {
 }
 
 func logoutHandler(w http.ResponseWriter, r *http.Request) {
-	req, _ := http.NewRequest("GET", AppConfig.Kratos.PublicURL+"/self-service/logout/browser", nil)
+	req, _ := http.NewRequest("GET", AppConfig.Kratos.APIURL+"/self-service/logout/browser", nil)
 	for _, c := range r.Cookies() {
 		req.AddCookie(c)
 	}

@@ -7,7 +7,7 @@ import(
 func requireLogin(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		whoamiURL := AppConfig.Kratos.PublicURL + "/sessions/whoami"
+		whoamiURL := AppConfig.Kratos.APIURL + "/sessions/whoami"
 		req, _ := http.NewRequest("GET", whoamiURL, nil)
 
 		for _, c := range r.Cookies() {
@@ -33,7 +33,7 @@ func requireLogin(next http.HandlerFunc) http.HandlerFunc {
 			// 元URLを return_to に入れる（超重要）
 			returnTo := url.QueryEscape("http://" + r.Host + r.URL.RequestURI())
 
-			loginURL := AppConfig.Kratos.PublicURL +
+			loginURL := AppConfig.Kratos.APIURL +
 				"/self-service/login/browser?return_to=" + returnTo
 
 			http.Redirect(w, r, loginURL, http.StatusFound)
