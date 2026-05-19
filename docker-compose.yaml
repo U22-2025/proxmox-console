@@ -1,7 +1,7 @@
 version: "3.9"
 
 services:
-  postgres:
+  kratos-postgres:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: kratos
@@ -19,12 +19,12 @@ services:
     image: oryd/kratos:latest
     command: migrate sql -e --yes -c /etc/config/kratos.yml
     volumes:
-      - ./kratos.yaml:/etc/config/kratos.yml:ro
-      - ./identity.schema.json:/etc/config/identity.schema.json:ro
+      - ./kratos/kratos.yaml:/etc/config/kratos.yml:ro
+      - ./kratos/identity.schema.json:/etc/config/identity.schema.json:ro
     environment:
-      DSN: postgres://kratos:secret@postgres:5432/kratos?sslmode=disable
+      DSN: postgres://kratos:secret@kratos-postgres:5432/kratos?sslmode=disable
     depends_on:
-      postgres:
+      kratos-postgres:
         condition: service_healthy
     restart: on-failure
 
@@ -35,8 +35,8 @@ services:
       - "4433:4433"
       - "4434:4434"
     volumes:
-      - ./kratos.yaml:/etc/config/kratos.yml:ro
-      - ./identity.schema.json:/etc/config/identity.schema.json:ro
+      - ./kratos/kratos.yaml:/etc/config/kratos.yml:ro
+      - ./kratos/identity.schema.json:/etc/config/identity.schema.json:ro
     depends_on:
       kratos-migrate:
         condition: service_completed_successfully
@@ -46,9 +46,28 @@ services:
     ports:
       - "3000:3000"
     env_file:
-      - .env
+      - kratos/.env
     depends_on:
       - kratos
+  
+  app-postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: u22
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: app
+    volumes:
+      - app-postgres-data:/var/lib/postgresql/data
+      - ./app-db:/docker-entrypoint-initdb.d
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U u22 -d app"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
 
 volumes:
   kratos-postgres-data:
+  app-postgres-data:

@@ -1,5 +1,5 @@
 # sed -i 's/localhost/192.168.1.1/g' kratos/kratos.yaml
-dsn: postgres://kratos:secret@postgres:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4
+dsn: postgres://kratos:secret@kratos-postgres:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4
 
 serve:
   public:
