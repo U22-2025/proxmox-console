@@ -41,12 +41,12 @@ func fetchKratosFlow(apiPath string, r *http.Request) (map[string]interface{}, e
 func loginUIHandler(w http.ResponseWriter, r *http.Request) {
 	flowID := r.URL.Query().Get("flow")
 	if flowID == "" {
-		http.Redirect(w, r, AppConfig.Kratos.APIURL+"/self-service/login/browser", http.StatusFound)
+		http.Redirect(w, r, AppConfig.Kratos.BrowserURL+"/self-service/login/browser", http.StatusFound)
 		return
 	}
 	flow, err := fetchKratosFlow("/self-service/login/flows?id="+flowID, r)
 	if err != nil {
-		http.Redirect(w, r, AppConfig.Kratos.APIURL+"/self-service/login/browser", http.StatusFound)
+		http.Redirect(w, r, AppConfig.Kratos.BrowserURL+"/self-service/login/browser", http.StatusFound)
 		return
 	}
 	flowJSON, _ := json.Marshal(flow)
@@ -57,12 +57,12 @@ func loginUIHandler(w http.ResponseWriter, r *http.Request) {
 func registrationUIHandler(w http.ResponseWriter, r *http.Request) {
 	flowID := r.URL.Query().Get("flow")
 	if flowID == "" {
-		http.Redirect(w, r, AppConfig.Kratos.APIURL+"/self-service/registration/browser", http.StatusFound)
+		http.Redirect(w, r, AppConfig.Kratos.BrowserURL+"/self-service/registration/browser", http.StatusFound)
 		return
 	}
 	flow, err := fetchKratosFlow("/self-service/registration/flows?id="+flowID, r)
 	if err != nil {
-		http.Redirect(w, r, AppConfig.Kratos.APIURL+"/self-service/registration/browser", http.StatusFound)
+		http.Redirect(w, r, AppConfig.Kratos.BrowserURL+"/self-service/registration/browser", http.StatusFound)
 		return
 	}
 	flowJSON, _ := json.Marshal(flow)
@@ -185,6 +185,7 @@ var iconPaths = {
   server:      "M5 4H4a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h1m6 0h2a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2M5 14H4a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h1m6 0h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-2",
   arrowRight:  "M5 12h14M12 5l7 7-7 7",
   alertCircle: "M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10zM12 8v4M12 16h.01",
+  logOut:      "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9",
 };
 
 var h = React.createElement;
@@ -476,64 +477,88 @@ function RightPanel() {
   );
 }
 
-/* ---------- エラーパネル ---------- */
-function ErrorPanel() {
+/* ---------- エラー全画面 (ダッシュボードと同じ構成) ---------- */
+function ErrorPage() {
   var error  = FLOW.error||{};
   var msg    = error.message||"An unexpected error occurred.";
   var code   = error.code||"";
   var reason = error.reason||"";
 
   return h("div",{style:{
-    flex:1,height:"100%",
-    display:"flex",alignItems:"center",justifyContent:"center",
-    padding:"48px 52px",
-    background:[
-      "radial-gradient(ellipse 70% 50% at 50% 0%,rgba(255,255,255,0.03) 0%,transparent 60%)",
-      "#04040a",
-    ].join(","),
+    display:"flex",flexDirection:"column",height:"100vh",
+    background:"#000",color:"#fff",
+    fontFamily:"'Inter',system-ui,sans-serif",
   }},
-    h("div",{style:{width:"100%",maxWidth:420}},
-      h(GlossCard,null,
-        h("div",{className:"fu1",style:{marginBottom:28}},
-          h("div",{style:{fontSize:32,fontWeight:200,color:"#fff",letterSpacing:"-0.03em",marginBottom:6}},"Error"),
-          h("div",{style:{fontSize:12,color:"#444"}},"Something went wrong")
-        ),
-        h("div",{className:"fu2",style:{
-          display:"flex",alignItems:"flex-start",gap:12,
-          padding:"13px 15px",
-          border:"1px solid rgba(244,63,94,0.18)",
-          marginBottom:reason?22:0,
-        }},
-          h(Icon,{name:"alertCircle",size:15,color:"#f43f5e",style:{marginTop:1}}),
-          h("div",null,
-            code&&h("div",{style:{fontSize:11,color:"#f43f5e",fontFamily:"monospace",marginBottom:4}},"HTTP "+code),
-            h("div",{style:{fontSize:13,color:"#ccc",lineHeight:1.65}},msg)
-          )
-        ),
-        reason&&h("div",{className:"fu3",style:{marginBottom:22}},
-          h("div",{style:{fontSize:10,color:"#2a2a2a",textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:7}},"Reason"),
-          h("div",{style:{fontSize:12,color:"#444",lineHeight:1.7}},reason)
-        ),
-        h("div",{style:{paddingTop:22,borderTop:"1px solid #1e1e2e"}},
-          h("a",{href:"/login",style:{fontSize:12,color:"#666",textDecoration:"none",display:"flex",alignItems:"center",gap:6}},
-            "Back to sign in",h(Icon,{name:"arrowRight",size:11,color:"#666"})
-          )
-        )
+
+    /* ヘッダー — ダッシュボードと同一構成 */
+    h("div",{style:{
+      display:"flex",alignItems:"center",
+      padding:"0 32px",height:52,
+      borderBottom:"1px solid #111",flexShrink:0,
+    }},
+      h("div",{style:{display:"flex",alignItems:"center",gap:10}},
+        h(Icon,{name:"server",size:16,color:"#fff"}),
+        h("span",{style:{fontSize:14,fontWeight:600,color:"#fff",letterSpacing:"-0.01em"}},"Proxmox Console"),
+        h("span",{style:{fontSize:11,color:"#333",marginLeft:2}},"v1.0")
+      ),
+      h("button",{
+        "aria-label":"Logout",
+        onClick:function(){ window.location.href="/logout"; },
+        style:{
+          marginLeft:"auto",background:"none",border:"none",
+          cursor:"pointer",padding:0,
+          display:"flex",alignItems:"center",gap:6,
+          color:"#444",fontSize:12,
+        }
+      },
+        h(Icon,{name:"logOut",size:14,color:"#444"}),"Logout"
       )
+    ),
+
+    /* ボディ */
+    h("div",{style:{
+      flex:1,display:"flex",flexDirection:"column",
+      justifyContent:"center",
+      padding:"0 64px",maxWidth:640,
+    }},
+
+      /* HTTPコード */
+      code && h("div",{style:{
+        fontSize:11,color:"#f43f5e",
+        fontFamily:"monospace",letterSpacing:"0.08em",
+        marginBottom:16,
+      }},"HTTP "+code),
+
+      /* エラーメッセージ — 一目でわかる赤テキスト */
+      h("div",{style:{
+        fontSize:28,fontWeight:300,
+        color:"#f43f5e",letterSpacing:"-0.02em",lineHeight:1.4,
+        marginBottom:reason?32:40,
+      }},msg),
+
+      /* Reason */
+      reason && h("div",{style:{marginBottom:40}},
+        h("div",{style:{
+          fontSize:10,color:"#444",
+          textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8,
+        }},"Reason"),
+        h("div",{style:{fontSize:13,color:"#666",lineHeight:1.75}},reason)
+      ),
+
     )
   );
 }
 
 /* ---------- Root ---------- */
 function App() {
-  var isError = PAGE_TITLE==="Error";
+  if (PAGE_TITLE==="Error") return h(ErrorPage);
   return h("div",{style:{
     display:"flex",height:"100vh",
     background:"#04040a",color:"#fff",
     fontFamily:"'Inter',system-ui,sans-serif",
   }},
-    !isError && h(LeftPanel),
-    isError ? h(ErrorPanel) : h(RightPanel)
+    h(LeftPanel),
+    h(RightPanel)
   );
 }
 
