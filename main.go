@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"bytes"
 	"crypto/rand"
@@ -41,25 +42,43 @@ func main() {
 	http.HandleFunc("/status", requireLogin(statusHandler))
 	http.HandleFunc("/api/jobs", requireLogin(listJobsHandler))
 	http.HandleFunc("/logout", logoutHandler)
+	http.HandleFunc("/login", loginUIHandler)
+	http.HandleFunc("/registration", registrationUIHandler)
+	http.HandleFunc("/error", errorUIHandler)
 
 	fmt.Println("Server started")
 	log.Fatal(http.ListenAndServe(":"+PORT, nil))
 }
 
 func logoutHandler(w http.ResponseWriter, r *http.Request) {
-	req, _ := http.NewRequest("GET", AppConfig.Kratos.APIURL+"/self-service/logout/browser", nil)
+	returnTo := AppConfig.App.URL + "/login"
+	kratosURL := AppConfig.Kratos.APIURL + "/self-service/logout/browser?return_to=" + url.QueryEscape(returnTo)
+
+	req, err := http.NewRequest("GET", kratosURL, nil)
+	if err != nil {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
 	for _, c := range r.Cookies() {
 		req.AddCookie(c)
 	}
+
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadGateway)
+		http.Redirect(w, r, "/login", http.StatusFound)
 		return
 	}
 	defer resp.Body.Close()
 
-	w.Header().Set("Content-Type", "application/json")
-	io.Copy(w, resp.Body)
+	var data struct {
+		LogoutURL string `json:"logout_url"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil || data.LogoutURL == "" {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+
+	http.Redirect(w, r, data.LogoutURL, http.StatusFound)
 }
 
 func listJobsHandler(w http.ResponseWriter, r *http.Request) {
